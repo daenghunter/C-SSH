@@ -3462,7 +3462,7 @@ case `#nyimak`:
             break
 case `#edotensei`:
 			if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
-            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
+          if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
             if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika menjadi admin!', id)	
 			if (mentionedJidList.length === 0) return xbot.reply(from, `Untuk menggunakan Perintah ini, kirim perintah *#edotensei* @tagmember`, id)
             //const org = args[1]
@@ -3484,7 +3484,17 @@ case `#edotensei`:
             xbot.reply(self, mess.wait, id)
             const emoji = emojiUnicode(args[1])
             xbot.sendStickerfromUrl(self, `https://api.vhtear.com/emojitopng?code=${emoji}&apikey=${vhtear}`)
-            break            
+            break  
+case '#stikerwa':
+          if (!isOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner Bot !', id)
+
+const stikerwa = body.slice(10)
+const data_json = await axios.get(`https://api.vhtear.com/wasticker?query=${stikerwa}&apikey=${vhtearKey}`) 
+const wastiker = data_json.data.result.data
+for (let i = 0; i < wastiker.length; i++) {
+xbot.sendStickerfromUrl(from, wastiker[i], { method: 'get' })
+}
+break          
         // LIST MENU
         case '#menu':
         case '#help':
