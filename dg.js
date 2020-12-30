@@ -19,6 +19,7 @@ const translatte = require('translatte')
 const { stdout } = require('process')
 const quotedd = require('./lib/quote')
 const translate = require('translatte')
+const emojiUnicode = require("emoji-unicode")
 const { getStickerMaker } = require('./lib/ttp')
 const Math_js = require('mathjs');
 const imageToBase64 = require('image-to-base64')
