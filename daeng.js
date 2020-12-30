@@ -78,6 +78,7 @@ const {
     stickerlight
     } = require('./lib/fetcher')
 
+
 // LOAD FILE
 const banned = JSON.parse(fs.readFileSync('./lib/database/banned.json'))
 const premium = JSON.parse(fs.readFileSync('./lib/database/premium.json'))
@@ -118,7 +119,27 @@ let state = {
 
 moment.tz.setDefault('Asia/Jakarta').locale('id')
 
-module.exports = tobz = async (tobz, message) => {
+function processSticker(input) {
+    return new Promise((resolve, reject) => {
+        if (typeof input == 'string' && /^data/.test(input)) input = Buffer.from(input.replace(/^data:.+;base64,/, ''))
+        sharp(input)
+            .toFormat('webp')
+            .resize(512, 512, {
+                fit: 'contain',
+                background: {
+                    r: 0,
+                    g: 0,
+                    b: 0,
+                    alpha: 0
+                }
+            })
+            .toBuffer()
+            .then(resolve)
+            .catch(reject)
+    })
+}
+
+module.exports = xbot = async (xbot, message) => {
     try {
         const { 
             type, 
@@ -160,7 +181,7 @@ module.exports = tobz = async (tobz, message) => {
         function restartAwal(client){
             setting.restartState = false
             isRestart = false
-            tobz.sendText(setting.restartId, 'Restart Succesfull!')
+            xbot.sendText(setting.restartId, 'Restart Succesfull!')
             setting.restartId = 'undefined'
             fs.writeFileSync('./lib/setting.json', JSON.stringify(setting, null,2));
         }
@@ -251,10 +272,12 @@ module.exports = tobz = async (tobz, message) => {
         }
 
         const time = moment(t * 1000).format('DD/MM HH:mm:ss')
-        const botNumber = await tobz.getHostNumber()
-        const blockNumber = await tobz.getBlockedIds()
+        const timu = moment(t * 1000).format('DD/MM/YYYY');
+        const timi = moment(t * 1000).add(30, 'days').calendar();
+        const botNumber = await xbot.getHostNumber()
+        const blockNumber = await xbot.getBlockedIds()
         const groupId = isGroupMsg ? chat.groupMetadata.id : ''
-        const groupAdmins = isGroupMsg ? await tobz.getGroupAdmins(groupId) : ''
+        const groupAdmins = isGroupMsg ? await xbot.getGroupAdmins(groupId) : ''
         const isGroupAdmins = isGroupMsg ? groupAdmins.includes(sender.id) : false
         const isBotGroupAdmins = isGroupMsg ? groupAdmins.includes(botNumber + '@c.us') : false
         const serial = sender.id
@@ -293,14 +316,14 @@ module.exports = tobz = async (tobz, message) => {
                         if(i.id === id){
                             if (i.msg >= 12) {
                                 found === true 
-                                tobz.reply(from, '*[ANTI-SPAM]*\nMaaf, akun anda kami blok karena SPAM, dan tidak bisa di UNBLOK!', id)
-                                tobz.contactBlock(id)
+                                xbot.reply(from, '*[ANTI-SPAM]*\nMaaf, akun anda kami blok karena SPAM, dan tidak bisa di UNBLOK!', id)
+                                xbot.contactBlock(id)
                                 banned.push(id)
                                 fs.writeFileSync('./lib/database/banned.json', JSON.stringify(banned))
                                 return true;
                             }else if(i.msg >= 7){
                                 found === true
-                                tobz.reply(from, '*[ANTI-SPAM]*\nNomor anda terdeteksi spam!\nMohon tidak spam 5 pesan lagi atau nomor anda AUTO BLOK!', id)
+                                xbot.reply(from, '*[ANTI-SPAM]*\nNomor anda terdeteksi spam!\nMohon tidak spam 5 pesan lagi atau nomor anda AUTO BLOK!', id)
                                 return true
                             }else{
                                 found === true
@@ -336,7 +359,7 @@ module.exports = tobz = async (tobz, message) => {
                             let limits = i.limit;
                             if (limits >= limitCount) {
                                 found = true;
-                                tobz.reply(from, 'Perintah BOT anda sudah mencapai batas, coba esok hari :)', id)
+                                xbot.reply(from, 'Perintah BOT anda sudah mencapai batas, coba esok hari :)', id)
                                 return true;
                             }else{
                                 limit
@@ -372,12 +395,12 @@ module.exports = tobz = async (tobz, message) => {
                 // END HELPER FUNCTION
                 if (isGroupMsg && !isGroupAdmins && !isAdmin && !isOwner){
                     if (chats.match(/(https:\/\/chat.whatsapp.com)/gi)) {
-                        const check = await tobz.inviteInfo(chats);
+                        const check = await xbot.inviteInfo(chats);
                         if (!check) {
                             return
                         } else {
-                            tobz.reply(from, `*「 GROUP LINK DETECTOR 」*\nKamu mengirimkan link grup chat, maaf kamu di kick dari grup :(`, id).then(() => {
-                                tobz.removeParticipant(groupId, sender.id)
+                            xbot.reply(from, `*「 GROUP LINK DETECTOR 」*\nKamu mengirimkan link grup chat, maaf kamu di kick dari grup :(`, id).then(() => {
+                                xbot.removeParticipant(groupId, sender.id)
                             })
                         }
                     }
@@ -385,19 +408,19 @@ module.exports = tobz = async (tobz, message) => {
                 // MRHRTZ
                 if (chats.match("anjing") || chats.match("gblk") || chats.match("tolol") || chats.match("kntl")) {
                     if (!isGroupAdmins) {
-                        return tobz.reply(from, "JAGA UCAPAN DONG!! 😠", id)
-                        .then(() => tobz.removeParticipant(groupId, sender.id))
+                        return xbot.reply(from, "JAGA UCAPAN DONG!! 😠", id)
+                        .then(() => xbot.removeParticipant(groupId, sender.id))
                         .then(() => {
-                            tobz.sendText(from, `*「 ANTI BADWORD 」*\nKamu mengirimkan link grup chat, maaf kamu di kick dari grup 🙁`)
-                        }).catch(() => tobz.sendText(from, `Untung XBOT Bukan Admin, Kalo Jadi Admin Udah Aku Kick Tuh! 😑`))
+                            xbot.sendText(from, `*「 ANTI BADWORD 」*\nKamu mengirimkan kata badword/toxic, maaf kamu di kick dari grup 🙁`)
+                        }).catch(() => xbot.sendText(from, `Untung XBOT Bukan Admin, Kalo Jadi Admin Udah Aku Kick Tuh! 😑`))
                     } else {
-                        return tobz.reply(from, "Tolong Jaga Ucapan Min 😇", id)
+                        return xbot.reply(from, "Tolong Jaga Ucapan Min 😇", id)
                     }
                 }
                 
                 if(body === '#mute' && isMuted(chatId) == true){
                     if(isGroupMsg) {
-                        if (!isAdmin) return tobz.reply(from, 'Maaf, perintah ini hanya dapat dilakukan oleh admin XBOT!', id)
+                        if (!isAdmin) return xbot.reply(from, 'Maaf, perintah ini hanya dapat dilakukan oleh admin XBOT!', id)
                         if(isMsgLimit(serial)){
                             return
                         }else{
@@ -405,7 +428,7 @@ module.exports = tobz = async (tobz, message) => {
                         }
                         muted.push(chatId)
                         fs.writeFileSync('./lib/database/muted.json', JSON.stringify(muted, null, 2))
-                        tobz.reply(from, 'Bot telah di mute pada chat ini! #unmute untuk unmute!', id)
+                        xbot.reply(from, 'Bot telah di mute pada chat ini! #unmute untuk unmute!', id)
                     }else{
                         if(isMsgLimit(serial)){
                             return
@@ -419,7 +442,7 @@ module.exports = tobz = async (tobz, message) => {
                 }
                 if(body === '#unmute' && isMuted(chatId) == false){
                     if(isGroupMsg) {
-                        if (!isAdmin) return tobz.reply(from, 'Maaf, perintah ini hanya dapat dilakukan oleh admin XBOT!', id)
+                        if (!isAdmin) return xbot.reply(from, 'Maaf, perintah ini hanya dapat dilakukan oleh admin XBOT!', id)
                         if(isMsgLimit(serial)){
                             return
                         }else{
@@ -428,7 +451,7 @@ module.exports = tobz = async (tobz, message) => {
                         let index = muted.indexOf(chatId);
                         muted.splice(index,1)
                         fs.writeFileSync('./lib/database/muted.json', JSON.stringify(muted, null, 2))
-                        tobz.reply(from, 'Bot telah di unmute!', id)         
+                        xbot.reply(from, 'Bot telah di unmute!', id)         
                     }else{
                         if(isMsgLimit(serial)){
                             return
@@ -438,16 +461,16 @@ module.exports = tobz = async (tobz, message) => {
                         let index = muted.indexOf(chatId);
                         muted.splice(index,1)
                         fs.writeFileSync('./lib/database/muted.json', JSON.stringify(muted, null, 2))
-                        tobz.reply(from, 'Bot telah di unmute!', id)                   
+                        xbot.reply(from, 'Bot telah di unmute!', id)                   
                     }
                 }
                 if (body === '#unbanchat') {
-                    if (!isOwner) return tobz.reply(from, 'Maaf, perintah ini hanya dapat dilakukan oleh Owner XBOT!', id)
+                    if (!isOwner) return xbot.reply(from, 'Maaf, perintah ini hanya dapat dilakukan oleh Owner XBOT!', id)
                     if(setting.banChats === false) return
                     setting.banChats = false
                     banChats = false
                     fs.writeFileSync('./lib/database/setting.json', JSON.stringify(setting, null, 2))
-                    tobz.reply('Global chat has been disable!')
+                    xbot.reply('Global chat has been disable!')
                 }
 
  
@@ -462,63 +485,75 @@ module.exports = tobz = async (tobz, message) => {
 
         case '#banchat':
             if (setting.banChats === true) return
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
             setting.banChats = true
             banChats = true
             fs.writeFileSync('./lib/database/setting.json', JSON.stringify(setting, null, 2))
-            tobz.reply('Global chat has been enable!')
+            xbot.reply('Global chat has been enable!')
             break
 
         case '#unmute':
             console.log(`Unmuted ${name}!`)
-            await tobz.sendSeen(from)
+            await xbot.sendSeen(from)
             break
         case '#unbanchat':
             console.log(`Banchat ${name}!`)
-            await tobz.sendSeen(from)
+            await xbot.sendSeen(from)
             break
         case '#sticker':
         case '#stiker':
             if (isMedia && type === 'image') {
                 const mediaData = await decryptMedia(message, uaOverride)
                 const imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
-                await tobz.sendImageAsSticker(from, imageBase64)
+                await xbot.sendImageAsSticker(from, imageBase64)
             } else if (quotedMsg && quotedMsg.type == 'image') {
                 const mediaData = await decryptMedia(quotedMsg, uaOverride)
                 const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
-                await tobz.sendImageAsSticker(from, imageBase64)
+                await xbot.sendImageAsSticker(from, imageBase64)
             } else if (args.length === 2) {
                 const url = args[1]
                 if (url.match(isUrl)) {
-                    await tobz.sendStickerfromUrl(from, url, { method: 'get' })
+                    await xbot.sendStickerfromUrl(from, url, { method: 'get' })
                         .catch(err => console.log('Caught exception: ', err))
                 } else {
-                    tobz.reply(from, mess.error.Iv, id)
+                    xbot.reply(from, mess.error.Iv, id)
                 }
             } else {
-                    tobz.reply(from, mess.error.St, id)
+                    xbot.reply(from, mess.error.St, id)
             }
             break
         case '#stickergif': // INSTALL FFMPEG, IF YOU WANT THIS COMMAND WORK!
         case '#stikergif': // TUTORIAL IN README, PLEASE READ!
         case '#sgif': // MRHRTZ
-            tobz.reply(from, `[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!`, id)
+            xbot.reply(from, `[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!`, id)
             if (isMedia && type === 'video' || mimetype === 'image/gif') {
                 try {
                     const mediaData = await decryptMedia(message, uaOverride)
-                    await tobz.sendMp4AsSticker(from, mediaData, {fps: 10, startTime: `00:00:00.0`, endTime : `00:00:05.0`,loop: 0})
+                    await xbot.sendMp4AsSticker(from, mediaData, {fps: 10, startTime: `00:00:00.0`, endTime : `00:00:05.0`,loop: 0})
                 } catch (e) {
-                    tobz.reply(from, `Size media terlalu besar! mohon kurangi durasi video.`)
+                    xbot.reply(from, `Size media terlalu besar! mohon kurangi durasi video.`)
                 }
             } else if (quotedMsg && quotedMsg.type == 'video' || quotedMsg && quotedMsg.mimetype == 'image/gif') {
                 const mediaData = await decryptMedia(quotedMsg, uaOverride)
-                await tobz.sendMp4AsSticker(from, mediaData, {fps: 10, startTime: `00:00:00.0`, endTime : `00:00:05.0`,loop: 0})
+                await xbot.sendMp4AsSticker(from, mediaData, {fps: 10, startTime: `00:00:00.0`, endTime : `00:00:05.0`,loop: 0})
             } else {
-                tobz.reply(from, `Kesalahan ⚠️ Hanya bisa video/gif apabila file media berbentuk gambar ketik #stickergif`, id)
+                xbot.reply(from, `Kesalahan ⚠️ Hanya bisa video/gif apabila file media berbentuk gambar ketik #stickergif`, id)
             } 
             break
+        case '#stic': {
+            if (isImage || isQuotedImage || isQuotedFile) {
+            const encryptMedia = isQuotedImage || isQuotedFile ? quotedMsg : message
+            const _mimetype = encryptMedia.mimetype
+            const mediaData = await decryptMedia(encryptMedia)
+            if (_mimetype === 'image/webp') xbot.sendRawWebpAsSticker(from, mediaData.toString('base64'), false)
+            const sticker = await processSticker(mediaData, 'contain')
+            await xbot.sendRawWebpAsSticker(from, sticker.toString('base64'), false)
+            } else xbot.reply(from, config.msg.noMedia, id)
+                }
+            break
+
         case '#ttp':
-                if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', message.id)
+                if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', message.id)
                 try
                 {
                     const string = body.toLowerCase().includes('#ttp') ? body.slice(5) : body.slice(5)
@@ -530,29 +565,29 @@ module.exports = tobz = async (tobz, message) => {
                             if(gasMake.status == true)
                             {
                                 try{
-                                    await tobz.sendImageAsSticker(from, gasMake.base64)
+                                    await xbot.sendImageAsSticker(from, gasMake.base64)
                                 }catch(err) {
-                                    await tobz.reply(from, 'Gagal membuat.', id)
+                                    await xbot.reply(from, 'Gagal membuat.', id)
                                 } 
                             }else{
-                                await tobz.reply(from, gasMake.reason, id)
+                                await xbot.reply(from, gasMake.reason, id)
                             }
                         }else if(quotedMsgObj != null){
                             const gasMake = await getStickerMaker(quotedMsgObj.body)
                             if(gasMake.status == true)
                             {
                                 try{
-                                    await tobz.sendImageAsSticker(from, gasMake.base64)
+                                    await xbot.sendImageAsSticker(from, gasMake.base64)
                                 }catch(err) {
-                                    await tobz.reply(from, 'Gagal membuat.', id)
+                                    await xbot.reply(from, 'Gagal membuat.', id)
                                 } 
                             }else{
-                                await tobz.reply(from, gasMake.reason, id)
+                                await xbot.reply(from, gasMake.reason, id)
                             }
                         }
                        
                     }else{
-                        await tobz.reply(from, 'Tidak boleh kosong.', id)
+                        await xbot.reply(from, 'Tidak boleh kosong.', id)
                     }
                 }catch(error)
                 {
@@ -560,20 +595,20 @@ module.exports = tobz = async (tobz, message) => {
                 }
             break;
         case '#ttg':
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             try {
                 if (quotedMsgObj == null) {
-                    if (args.length === 1) return tobz.reply(from, `Kirim perintah *#ttg [ Teks ]*, contoh *#ttg aku bukan boneka*`, id)
-                        await tobz.sendStickerfromUrl(from, `https://api.vhtear.com/textxgif?text=${body.slice(5)}&apikey=${vhtearkey}`)
+                    if (args.length === 1) return xbot.reply(from, `Kirim perintah *#ttg [ Teks ]*, contoh *#ttg aku bukan boneka*`, id)
+                        await xbot.sendStickerfromUrl(from, `https://api.vhtear.com/textxgif?text=${body.slice(5)}&apikey=${vhtearkey}`)
                         limitAdd(serial)
                 } else {
-                    await tobz.sendStickerfromUrl(from, `https://api.vhtear.com/textxgif?text=${quotedMsgObj}&apikey=${vhtearkey}`)
+                    await xbot.sendStickerfromUrl(from, `https://api.vhtear.com/textxgif?text=${quotedMsgObj}&apikey=${vhtearkey}`)
                     limitAdd(serial)
                 }
             } catch(e) {
                 console.log(e)
-                tobz.reply(from, 'Maaf, Server sedang Error')
+                xbot.reply(from, 'Maaf, Server sedang Error')
             }
             break
  
@@ -581,54 +616,54 @@ module.exports = tobz = async (tobz, message) => {
         case '#toimg':
                 if (quotedMsg && quotedMsg.type == 'sticker') {
                 const mediaData = await decryptMedia(quotedMsg)
-                tobz.reply(from, `[WAIT] Sedang di proses⏳ silahkan tunggu!`, id)
+                xbot.reply(from, `[WAIT] Sedang di proses⏳ silahkan tunggu!`, id)
                 const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
-                await tobz.sendFile(from, imageBase64, 'imagesticker.jpg', 'Success Convert Sticker to Image!', id)
-            } else if (!quotedMsg) return tobz.reply(from, `Mohon tag sticker yang ingin dijadikan gambar!`, id)
+                await xbot.sendFile(from, imageBase64, 'imagesticker.jpg', 'Success Convert Sticker to Image!', id)
+            } else if (!quotedMsg) return xbot.reply(from, `Mohon tag sticker yang ingin dijadikan gambar!`, id)
             break
 
                 case '#stickerlightning':
         case '#slightning':
         case '#slight':
-             tobz.reply(from, `[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!`, id)
+             xbot.reply(from, `[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!`, id)
             if (isMedia && type === 'image') {
                 const mediaData = await decryptMedia(message, uaOverride)
                 const getUrle = await uploadImages(mediaData, false)
                 const imgnye = await stickerlight(getUrle)
                 const Slight = imgnye.result.imgUrl
-                await tobz.sendStickerfromUrl(from, Slight)
+                await xbot.sendStickerfromUrl(from, Slight)
             } else if (quotedMsg && quotedMsg.type == 'image') {
                 const mediaData = await decryptMedia(quotedMsg, uaOverride)
                 const getUrle = await uploadImages(mediaData, false)
                 const imgnye = await stickerlight(getUrle)
                 const Slight = imgnye.result.imgUrl
-                await tobz.sendStickerfromUrl(from, Slight)
+                await xbot.sendStickerfromUrl(from, Slight)
             } else {
-                await tobz.reply(from, `Wrong Format!\n⚠️ Harap Kirim Gambar Dengan #stickerlightning`, id)
+                await xbot.reply(from, `Wrong Format!\n⚠️ Harap Kirim Gambar Dengan #stickerlightning`, id)
             }
             break
         case '#stickerfire':
         case '#sfire':
-            if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
-            tobz.reply(from, `[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!`, id)
+           // // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+            xbot.reply(from, `[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!`, id)
             if (isMedia && type === 'image') {
                 const mediaData = await decryptMedia(message, uaOverride)
                 const getUrli = await uploadImages(mediaData, false)
                 const imgnya = await stickerburn(getUrli)
                 const Sfire = imgnya.result.imgUrl
-                await tobz.sendStickerfromUrl(from, Sfire)
+                await xbot.sendStickerfromUrl(from, Sfire)
             } else if (quotedMsg && quotedMsg.type == 'image') {
                 const mediaData = await decryptMedia(quotedMsg, uaOverride)
                 const getUrli = await uploadImages(mediaData, false)
                 const imgnya = await stickerburn(getUrli)
                 const Sfire = imgnya.result.imgUrl
-                await tobz.sendStickerfromUrl(from, Sfire)
+                await xbot.sendStickerfromUrl(from, Sfire)
             } else {
-                await tobz.reply(from, `Wrong Format!\n⚠️ Harap Kirim Gambar Dengan #stickerfire`, id)
+                await xbot.reply(from, `Wrong Format!\n⚠️ Harap Kirim Gambar Dengan #stickerfire`, id)
             }
             break
         case '#groupinfo' :
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', message.id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', message.id)
             isMuted(chatId) == false
             var totalMem = chat.groupMetadata.participants.length
             var desc = chat.groupMetadata.desc
@@ -637,13 +672,13 @@ module.exports = tobz = async (tobz, message) => {
             var leftgrp = left.includes(chat.id)
             var ngrp = nsfw_.includes(chat.id)
             var simu = simi_.includes(chat.id)
-            var grouppic = await tobz.getProfilePicFromServer(chat.id)
+            var grouppic = await xbot.getProfilePicFromServer(chat.id)
             if (grouppic == undefined) {
                  var pfp = errorurl
             } else {
                  var pfp = grouppic 
             }
-            await tobz.sendFileFromUrl(from, pfp, 'group.png', `➸ *Name : ${groupname}* 
+            await xbot.sendFileFromUrl(from, pfp, 'group.png', `➸ *Name : ${groupname}* 
 *➸ Members : ${totalMem}*
 *➸ Welcome : ${welgrp}*
 *➸ Left : ${leftgrp}*
@@ -654,241 +689,241 @@ ${desc}`)
             break
         case '#quoterandom' :
         case '#quote' :
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            tobz.sendText(from, quotedd())
+            xbot.sendText(from, quotedd())
             break
         case '#tts':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             try {
-                if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#tts [ Bahasa ] [ Teks ]*, contoh *#tts id halo semua*')
+                if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#tts [ Bahasa ] [ Teks ]*, contoh *#tts id halo semua*')
                 var dataBhs = args[1]      
                 const ttsHZ = require('node-gtts')(dataBhs)
                 var dataText = body.slice(8)
-                if (dataText === '') return tobz.reply(from, 'Masukkan teksnya', id)
+                if (dataText === '') return xbot.reply(from, 'Masukkan teksnya', id)
                 if (dataText.length > 500) return client.reply(from, 'Teks terlalu panjang!', id)
                 var dataBhs = body.slice(5, 7)
                 ttsHZ.save('./media/tts.mp3', dataText, function () {
-                tobz.sendPtt(from, './media/tts.mp3', id)
+                xbot.sendPtt(from, './media/tts.mp3', id)
                 })
             } catch (err){
                 console.log(err)
-                tobz.reply(from, bahasa_list, id)
+                xbot.reply(from, bahasa_list, id)
             }
             break
         case '#koin':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const side = Math.floor(Math.random() * 2) + 1
             if (side == 1) {
-              tobz.sendStickerfromUrl(from, 'https://i.ibb.co/YTWZrZV/2003-indonesia-500-rupiah-copy.png', { method: 'get' })
+              xbot.sendStickerfromUrl(from, 'https://i.ibb.co/YTWZrZV/2003-indonesia-500-rupiah-copy.png', { method: 'get' })
             } else {
-              tobz.sendStickerfromUrl(from, 'https://i.ibb.co/bLsRM2P/2003-indonesia-500-rupiah-copy-1.png', { method: 'get' })
+              xbot.sendStickerfromUrl(from, 'https://i.ibb.co/bLsRM2P/2003-indonesia-500-rupiah-copy-1.png', { method: 'get' })
             }
             break
         case '#dadu':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const dice = Math.floor(Math.random() * 6) + 1
-            await tobz.sendStickerfromUrl(from, 'https://www.random.org/dice/dice' + dice + '.png', { method: 'get' })
+            await xbot.sendStickerfromUrl(from, 'https://www.random.org/dice/dice' + dice + '.png', { method: 'get' })
             break
         case '#kapankah':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const when = args.join(' ')
             const ans = kapankah[Math.floor(Math.random() * (kapankah.length))]
-            if (!when) tobz.reply(from, '⚠️ Format salah! Ketik *#menu* untuk penggunaan.')
-            await tobz.sendText(from, `Pertanyaan: *${when}* \n\nJawaban: ${ans}`)
+            if (!when) xbot.reply(from, '⚠️ Format salah! Ketik *#menu* untuk penggunaan.')
+            await xbot.sendText(from, `Pertanyaan: *${when}* \n\nJawaban: ${ans}`)
             break
         case '#nilai':
         case '#rate':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const rating = args.join(' ')
             const awr = rate[Math.floor(Math.random() * (rate.length))]
-            if (!rating) tobz.reply(from, '⚠️ Format salah! Ketik *#menu* untuk penggunaan.')
-            await tobz.sendText(from, `Pertanyaan: *${rating}* \n\nJawaban: ${awr}`)
+            if (!rating) xbot.reply(from, '⚠️ Format salah! Ketik *#menu* untuk penggunaan.')
+            await xbot.sendText(from, `Pertanyaan: *${rating}* \n\nJawaban: ${awr}`)
             break
         case '#apakah':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const nanya = args.join(' ')
             const jawab = apakah[Math.floor(Math.random() * (apakah.length))]
-            if (!nanya) tobz.reply(from, '⚠️ Format salah! Ketik *#menu* untuk penggunaan.')
-            await tobz.sendText(from, `Pertanyaan: *${nanya}* \n\nJawaban: ${jawab}`)
+            if (!nanya) xbot.reply(from, '⚠️ Format salah! Ketik *#menu* untuk penggunaan.')
+            await xbot.sendText(from, `Pertanyaan: *${nanya}* \n\nJawaban: ${jawab}`)
             break
          case '#bisakah':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const bsk = args.join(' ')
             const jbsk = bisakah[Math.floor(Math.random() * (bisakah.length))]
-            if (!bsk) tobz.reply(from, '⚠️ Format salah! Ketik *#menu* untuk penggunaan.')
-            await tobz.sendText(from, `Pertanyaan: *${bsk}* \n\nJawaban: ${jbsk}`)
+            if (!bsk) xbot.reply(from, '⚠️ Format salah! Ketik *#menu* untuk penggunaan.')
+            await xbot.sendText(from, `Pertanyaan: *${bsk}* \n\nJawaban: ${jbsk}`)
             break
         case '#owner':
         case '#creator':
-            tobz.sendContact(chatId, `6281342077268@c.us`)
-            tobz.reply(from, 'Itu nomor ownerku, kalo mau pasang iklan atau mau jadi premium. chat aja diaa', id)
+            xbot.sendContact(chatId, `6281342077268@c.us`)
+            xbot.reply(from, 'Itu nomor ownerku, kalo mau pasang iklan atau mau jadi premium. chat aja diaa', id)
             break
         // ON OFF
         case '#nsfw':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin group!', id)
-            if (args.length === 1) return tobz.reply(from, 'Pilih enable atau disable!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin group!', id)
+            if (args.length === 1) return xbot.reply(from, 'Pilih enable atau disable!', id)
             if (args[1].toLowerCase() === 'enable') {
                 nsfw_.push(chat.id)
                 fs.writeFileSync('./lib/database/nsfwz.json', JSON.stringify(nsfw_))
-                tobz.reply(from, 'NSFW berhasil di aktifkan di group ini! kirim perintah *#nsfwMenu* untuk mengetahui menu', id)
+                xbot.reply(from, 'NSFW berhasil di aktifkan di group ini! kirim perintah *#nsfwMenu* untuk mengetahui menu', id)
             } else if (args[1].toLowerCase() === 'disable') {
                 nsfw_.splice(chat.id, 1)
                 fs.writeFileSync('./lib/database/nsfwz.json', JSON.stringify(nsfw_))
-                tobz.reply(from, 'NSFW berhasil di nonaktifkan di group ini!', id)
+                xbot.reply(from, 'NSFW berhasil di nonaktifkan di group ini!', id)
             } else {
-                tobz.reply(from, 'Pilih enable atau disable udin!', id)
+                xbot.reply(from, 'Pilih enable atau disable udin!', id)
             }
             break
         case '#simi':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isAdmin) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin XBOT!', id) // Hanya Admin yang bisa mengaktifkan
-            if (args.length === 1) return tobz.reply(from, 'Pilih enable atau disable!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isAdmin) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin XBOT!', id) // Hanya Admin yang bisa mengaktifkan
+            if (args.length === 1) return xbot.reply(from, 'Pilih enable atau disable!', id)
             if (args[1].toLowerCase() === 'enable') {
                 simi_.push(chat.id)
                 fs.writeFileSync('./lib/database/Simsimi.json', JSON.stringify(simi_))
-                tobz.reply(from, 'Simsimi berhasil di aktifkan di group ini! Kirim perintah *# [teks]*\nContoh : *# halo*', id)
+                xbot.reply(from, 'Simsimi berhasil di aktifkan di group ini! Kirim perintah *# [teks]*\nContoh : *# halo*', id)
             } else if (args[1].toLowerCase() === 'disable') {
                 simi_.splice(chat.id, 1)
                 fs.writeFileSync('./lib/database/Simsimi.json', JSON.stringify(simi_))
-                tobz.reply(from, 'Simsimi berhasil di nonaktifkan di group ini!', id)
+                xbot.reply(from, 'Simsimi berhasil di nonaktifkan di group ini!', id)
             } else {
-                tobz.reply(from, 'Pilih enable atau disable udin!', id)
+                xbot.reply(from, 'Pilih enable atau disable udin!', id)
             }
             break
         case '#group':
-            if (!isGroupMsg) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan oleh admin group', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            if (args.length === 1) return tobz.reply(from, 'Pilih open atau close!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan oleh admin group', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (args.length === 1) return xbot.reply(from, 'Pilih open atau close!', id)
             if (args[1].toLowerCase() === 'open') {
-                tobz.setGroupToAdminsOnly(groupId, false)
-                tobz.sendTextWithMentions(from, `Group telah dibuka oleh admin @${sender.id.replace('@c.us','')}\nSekarang *semua member* dapat mengirim pesan`)
+                xbot.setGroupToAdminsOnly(groupId, false)
+                xbot.sendTextWithMentions(from, `Group telah dibuka oleh admin @${sender.id.replace('@c.us','')}\nSekarang *semua member* dapat mengirim pesan`)
             } else if (args[1].toLowerCase() === 'close') {
-                tobz.setGroupToAdminsOnly(groupId, true)
-                tobz.sendTextWithMentions(from, `Group telah ditutup oleh admin @${sender.id.replace('@c.us','')}\nSekarang *hanya admin* yang dapat mengirim pesan`)
+                xbot.setGroupToAdminsOnly(groupId, true)
+                xbot.sendTextWithMentions(from, `Group telah ditutup oleh admin @${sender.id.replace('@c.us','')}\nSekarang *hanya admin* yang dapat mengirim pesan`)
             } else {
-                tobz.reply(from, 'Pilih open atau disable close!', id)
+                xbot.reply(from, 'Pilih open atau disable close!', id)
             }
             break
         case '#left':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin group!', id)
-            if (args.length === 1) return tobz.reply(from, 'Pilih enable atau disable!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin group!', id)
+            if (args.length === 1) return xbot.reply(from, 'Pilih enable atau disable!', id)
             if (args[1].toLowerCase() === 'enable') {
                 left.push(chat.id)
                 fs.writeFileSync('./lib/database/left.json', JSON.stringify(left))
-                tobz.reply(from, 'Fitur left berhasil di aktifkan di group ini!', id)
+                xbot.reply(from, 'Fitur left berhasil di aktifkan di group ini!', id)
             } else if (args[1].toLowerCase() === 'disable') {
                 left.splice(chat.id, 1)
                 fs.writeFileSync('./lib/database/left.json', JSON.stringify(left))
-                tobz.reply(from, 'Fitur left berhasil di nonaktifkan di group ini!', id)
+                xbot.reply(from, 'Fitur left berhasil di nonaktifkan di group ini!', id)
             } else {
-                tobz.reply(from, 'Pilih enable atau disable udin!', id)
+                xbot.reply(from, 'Pilih enable atau disable udin!', id)
             }
             break
         case '#welcome':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin group!', id)
-            if (args.length === 1) return tobz.reply(from, 'Pilih enable atau disable!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin group!', id)
+            if (args.length === 1) return xbot.reply(from, 'Pilih enable atau disable!', id)
             if (args[1].toLowerCase() === 'enable') {
                 welkom.push(chat.id)
                 fs.writeFileSync('./lib/database/welcome.json', JSON.stringify(welkom))
-                tobz.reply(from, 'Fitur welcome berhasil di aktifkan di group ini!', id)
+                xbot.reply(from, 'Fitur welcome berhasil di aktifkan di group ini!', id)
             } else if (args[1].toLowerCase() === 'disable') {
                 welkom.splice(chat.id, 1)
                 fs.writeFileSync('./lib/database/welcome.json', JSON.stringify(welkom))
-                tobz.reply(from, 'Fitur welcome berhasil di nonaktifkan di group ini!', id)
+                xbot.reply(from, 'Fitur welcome berhasil di nonaktifkan di group ini!', id)
             } else {
-                tobz.reply(from, 'Pilih enable atau disable udin!', id)
+                xbot.reply(from, 'Pilih enable atau disable udin!', id)
             }
             break
         // ANIME //
         case '#otakudesu':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#otakudesu [query]*\nContoh : *#otakudesu darling in the franxx*', id)
-            const animes = await axios.get('https://mhankbarbar.herokuapp.com/api/otakudesu?q=' + body.slice(7) + '&apiKey=' + barbarkey)
-            if (animes.data.error) return tobz.reply(from, animes.data.error, id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#otakudesu [query]*\nContoh : *#otakudesu darling in the franxx*', id)
+            const animes = await axios.get('https://mhankbarbars.herokuapp.com/api/otakudesu?q=' + body.slice(7) + '&apiKey=' + barbarkey)
+            if (animes.data.error) return xbot.reply(from, animes.data.error, id)
             const res_animes = `${animes.data.title}\n\n${animes.data.info}\n\n${animes.data.sinopsis}`
-            tobz.sendFileFromUrl(from, animes.data.thumb, 'otakudesu.jpg', res_animes, id)
+            xbot.sendFileFromUrl(from, animes.data.thumb, 'otakudesu.jpg', res_animes, id)
             break
         case '#kusonime':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#kusonime [query]*\nContoh : *#kusonime darling in the franxx*', id)
-            const animeq = await axios.get('https://mhankbarbar.herokuapp.com/api/kuso?q=' + body.slice(7) + '&apiKey=' + barbarkey)
-            if (animeq.data.error) return tobz.reply(from, animeq.data.error, id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#kusonime [query]*\nContoh : *#kusonime darling in the franxx*', id)
+            const animeq = await axios.get('https://mhankbarbars.herokuapp.com/api/kuso?q=' + body.slice(7) + '&apiKey=' + barbarkey)
+            if (animeq.data.error) return xbot.reply(from, animeq.data.error, id)
             const res_animeq = `${animeq.data.title}\n\n${animeq.data.info}\n\n${animeq.data.sinopsis}\n\n${animeq.data.link_dl}`
-            tobz.sendFileFromUrl(from, animeq.data.thumb, 'kusonime.jpg', res_animeq, id)
+            xbot.sendFileFromUrl(from, animeq.data.thumb, 'kusonime.jpg', res_animeq, id)
             break
         case '#dewabatch':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#dewabatch [query]*\nContoh : *#dewabatch darling in the franxx*', id)
-            const animek = await axios.get('https://mhankbarbar.herokuapp.com/api/dewabatch?q=' + body.slice(7) + '&apiKey=' + barbarkey)
-            if (animek.data.error) return tobz.reply(from, animek.data.error, id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#dewabatch [query]*\nContoh : *#dewabatch darling in the franxx*', id)
+            const animek = await axios.get('https://mhankbarbars.herokuapp.com/api/dewabatch?q=' + body.slice(7) + '&apiKey=' + barbarkey)
+            if (animek.data.error) return xbot.reply(from, animek.data.error, id)
             const res_animek = `${animek.data.result}\n\n${animek.data.sinopsis}`
-            tobz.sendFileFromUrl(from, animek.data.thumb, 'dewabatch.jpg', res_animek, id)
+            xbot.sendFileFromUrl(from, animek.data.thumb, 'dewabatch.jpg', res_animek, id)
             break
         case '#komiku':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#komiku [query]*\nContoh : *#komiku darling in the franxx*', id)
-            const animep = await axios.get('https://mhankbarbar.herokuapp.com/api/komiku?q=' + body.slice(7) + '&apiKey=' + barbarkey)
-            if (animep.data.error) return tobz.reply(from, animep.data.error, id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#komiku [query]*\nContoh : *#komiku darling in the franxx*', id)
+            const animep = await axios.get('https://mhankbarbars.herokuapp.com/api/komiku?q=' + body.slice(7) + '&apiKey=' + barbarkey)
+            if (animep.data.error) return xbot.reply(from, animep.data.error, id)
             const res_animep = `${animep.data.info}\n\n${animep.data.sinopsis}\n\n${animep.data.link_dl}`
-            tobz.sendFileFromUrl(from, animep.data.thumb, 'komiku.jpg', res_animep, id)
+            xbot.sendFileFromUrl(from, animep.data.thumb, 'komiku.jpg', res_animep, id)
             break
         case '#pinterest':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#pinterest [query]*\nContoh : *#pinterest XBOT*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#pinterest [query]*\nContoh : *#pinterest XBOT*', id)
             const ptrsq = body.slice(11)
             const ptrs = await axios.get('https://api.fdci.se/rep.php?gambar='+ptrsq)
             const b = JSON.parse(JSON.stringify(ptrs.data))
             const ptrs2 =  b[Math.floor(Math.random() * b.length)]
             const image = await bent("buffer")(ptrs2)
             const base64 = `data:image/jpg;base64,${image.toString("base64")}`
-            tobz.sendImage(from, base64, 'ptrs.jpg', `*Pinterest*\n\n*Hasil Pencarian : ${ptrsq}*`)
+            xbot.sendImage(from, base64, 'ptrs.jpg', `*Pinterest*\n\n*Hasil Pencarian : ${ptrsq}*`)
             break
         case '#nhview':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#nhview [212121]*\nContoh : *#nhview 321421*', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#nhview [212121]*\nContoh : *#nhview 321421*', id)
             const nhsh = body.slice(11)
             const nhsh2 = await axios.get('https://mnazria.herokuapp.com/api/nhentai?code='+nhsh)
             for (let i = 0; i < nhsh2.length; i++) {
-                await tobz.sendImage(from, nhsh2[i].data, 'thumbserc.jpg', '', id)
+                await xbot.sendImage(from, nhsh2[i].data, 'thumbserc.jpg', '', id)
                 }
             break
         case '#loli':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const loli = await axios.get(`https://api.vhtear.com/randomloli&apikey=${vhtearkey}`)
             const loly = loli.data.result
-            tobz.sendFileFromUrl(from, loly.result, 'loli.jpeg', '*LOLI*', id)
+            xbot.sendFileFromUrl(from, loly.result, 'loli.jpeg', '*LOLI*', id)
             break
         case '#shota':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const imageToBase64 = require('image-to-base64')
@@ -904,7 +939,7 @@ ${desc}`)
             .then(
                 (response) => {
             let img = 'data:image/jpeg;base64,'+response
-            tobz.sendFile(from, img, "shota.jpg", `*SHOTA*`, id)
+            xbot.sendFile(from, img, "shota.jpg", `*SHOTA*`, id)
                     }) 
                 .catch(
                     (error) => {
@@ -913,27 +948,27 @@ ${desc}`)
             })
             break
         case '#waifu':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            const waifu = await axios.get('https://mhankbarbar.herokuapp.com/api/waifu' + '?apiKey=' + barbarkey)
-            tobz.sendFileFromUrl(from, waifu.data.image, 'Waifu.jpg', `➸ Name : ${waifu.data.name}\n➸ Description : ${waifu.data.desc}\n\n➸ Source : ${waifu.data.source}`, id)
+            const waifu = await axios.get('https://mhankbarbars.herokuapp.com/api/waifu' + '?apiKey=' + barbarkey)
+            xbot.sendFileFromUrl(from, waifu.data.image, 'Waifu.jpg', `➸ Name : ${waifu.data.name}\n➸ Description : ${waifu.data.desc}\n\n➸ Source : ${waifu.data.source}`, id)
             break
         case '#husbu':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const diti = fs.readFileSync('./lib/database/husbu.json')
             const ditiJsin = JSON.parse(diti)
             const rindIndix = Math.floor(Math.random() * ditiJsin.length)
             const rindKiy = ditiJsin[rindIndix]
-            tobz.sendFileFromUrl(from, rindKiy.image, 'Husbu.jpg', rindKiy.teks, id)
+            xbot.sendFileFromUrl(from, rindKiy.image, 'Husbu.jpg', rindKiy.teks, id)
             break
         case '#randomnekonime':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const nekonime = await axios.get(`https://api.vhtear.com/randomnekonime&apikey=${vhtearkey}`)
@@ -943,27 +978,27 @@ ${desc}`)
             } else {
                 var ext = '.jpg'
             }
-            tobz.sendFileFromUrl(from, nekon.result, `Nekonime${ext}`, 'Nekonime!', id)
+            xbot.sendFileFromUrl(from, nekon.result, `Nekonime${ext}`, 'Nekonime!', id)
             break
         case '#randomtrapnime':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isNsfw) return tobz.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isNsfw) return xbot.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            const trapnime = await axios.get('https://mhankbarbar.herokuapp.com/api/random/trap')
+            const trapnime = await axios.get('https://mhankbarbars.herokuapp.com/api/random/trap')
             const trapn = trapnime.data.result
             if (trapn.result.endsWith('.png')) {
                 var ext = '.png'
             } else {
                 var ext = '.jpg'
             }
-            tobz.sendImage(from, trapn.result, `trapnime${ext}`, 'Trapnime!', id)
+            xbot.sendImage(from, trapn.result, `trapnime${ext}`, 'Trapnime!', id)
             break
         case '#randomhentai':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isNsfw) return tobz.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isNsfw) return xbot.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const hentai = await axios.get(`https://api.vhtear.com/randomhentai?apikey=${vhtearkey}`)
@@ -973,26 +1008,26 @@ ${desc}`)
             } else {
                 var ext = '.jpg'
             }
-            tobz.sendImage(from, henta.result, `RandomHentai${ext}`, 'Random Hentai!', id)
+            xbot.sendImage(from, henta.result, `RandomHentai${ext}`, 'Random Hentai!', id)
             break
         case '#randomnsfwneko':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isNsfw) return tobz.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isNsfw) return xbot.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            const nsfwneko = await axios.get('https://mhankbarbar.herokuapp.com/api/random/nsfwneko')
+            const nsfwneko = await axios.get('https://mhankbarbars.herokuapp.com/api/random/nsfwneko')
             const nsfwn = nsfwneko.data
             if (nsfwn.result.endsWith('.png')) {
                 var ext = '.png'
             } else {
                 var ext = '.jpg'
             }
-            tobz.sendImage(from, nsfwn.result, `NsfwNeko${ext}`, 'NsfwNeko!', id)
+            xbot.sendImage(from, nsfwn.result, `NsfwNeko${ext}`, 'NsfwNeko!', id)
             break
         case '#randomanime':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const ranime = await axios.get('https://api.computerfreaker.cf/v1/anime')
@@ -1002,7 +1037,7 @@ ${desc}`)
             } else {
                 var ext = '.jpg'
             }
-            tobz.sendFileFromUrl(from, ranime.url, `RandomAnime${ext}`, 'Random Anime!', id)
+            xbot.sendFileFromUrl(from, ranime.url, `RandomAnime${ext}`, 'Random Anime!', id)
             break
         case '#subreddit':
             arg = body.trim().split(' ')
@@ -1012,21 +1047,21 @@ ${desc}`)
             const { postLink, title, subreddit, url, nsfw, spoiler } = response1.data
                 if (nsfw == true) {
                     if ((isGroupMsg) && (isNsfw)) {
-                        await tobz.sendFileFromUrl(from, `${url}`, 'Reddit.jpg', `*Title*: ${title}` + '\n\n*Postlink*:' + `${postLink}`)
+                        await xbot.sendFileFromUrl(from, `${url}`, 'Reddit.jpg', `*Title*: ${title}` + '\n\n*Postlink*:' + `${postLink}`)
                     } else if ((isGroupMsg) && (!isNsfw)) {
-                        await tobz.reply(from, `Nsfw belum diaktifkan di Grup *${name}*`, id)
+                        await xbot.reply(from, `Nsfw belum diaktifkan di Grup *${name}*`, id)
                     }
                 } else { 
-                    await tobz.sendFileFromUrl(from, `${url}`, 'Reddit.jpg', `*Title*: ${title}` + '\n\n*Postlink*:' + `${postLink}`)
+                    await xbot.sendFileFromUrl(from, `${url}`, 'Reddit.jpg', `*Title*: ${title}` + '\n\n*Postlink*:' + `${postLink}`)
                 }
             } catch(err) {
-                await tobz.sendFileFromUrl(from, errorurl, id) 
+                await xbot.sendFileFromUrl(from, errorurl, id) 
             }
             break
         case '#nhder':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isNsfw) return tobz.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isNsfw) return xbot.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             if (args.length >=2){
@@ -1037,56 +1072,56 @@ ${desc}`)
                 url['short'] = shortener
                 short.push(url)
                 const caption = `*NEKOPOI DOWNLOADER*\n\nLink: ${shortener}`
-                tobz.sendText(from, caption)
+                xbot.sendText(from, caption)
             } else {
-                tobz.sendText(from, 'Maaf tolong masukan code nuclear')
+                xbot.sendText(from, 'Maaf tolong masukan code nuclear')
             }
             break
         /*case '#wallanime' :
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const walnime = ['https://wallpaperaccess.com/full/395986.jpg','https://wallpaperaccess.com/full/21628.jpg','https://wallpaperaccess.com/full/21622.jpg','https://wallpaperaccess.com/full/21612.jpg','https://wallpaperaccess.com/full/21611.png','https://wallpaperaccess.com/full/21597.jpg','https://cdn.nekos.life/wallpaper/QwGLg4oFkfY.png','https://wallpaperaccess.com/full/21591.jpg','https://cdn.nekos.life/wallpaper/bUzSjcYxZxQ.jpg','https://cdn.nekos.life/wallpaper/j49zxzaUcjQ.jpg','https://cdn.nekos.life/wallpaper/YLTH5KuvGX8.png','https://cdn.nekos.life/wallpaper/Xi6Edg133m8.jpg','https://cdn.nekos.life/wallpaper/qvahUaFIgUY.png','https://cdn.nekos.life/wallpaper/leC8q3u8BSk.jpg','https://cdn.nekos.life/wallpaper/tSUw8s04Zy0.jpg','https://cdn.nekos.life/wallpaper/sqsj3sS6EJE.png','https://cdn.nekos.life/wallpaper/HmjdX_s4PU4.png','https://cdn.nekos.life/wallpaper/Oe2lKgLqEXY.jpg','https://cdn.nekos.life/wallpaper/GTwbUYI-xTc.jpg','https://cdn.nekos.life/wallpaper/nn_nA8wTeP0.png','https://cdn.nekos.life/wallpaper/Q63o6v-UUa8.png','https://cdn.nekos.life/wallpaper/ZXLFm05K16Q.jpg','https://cdn.nekos.life/wallpaper/cwl_1tuUPuQ.png','https://cdn.nekos.life/wallpaper/wWhtfdbfAgM.jpg','https://cdn.nekos.life/wallpaper/3pj0Xy84cPg.jpg','https://cdn.nekos.life/wallpaper/sBoo8_j3fkI.jpg','https://cdn.nekos.life/wallpaper/gCUl_TVizsY.png','https://cdn.nekos.life/wallpaper/LmTi1k9REW8.jpg','https://cdn.nekos.life/wallpaper/sbq_4WW2PUM.jpg','https://cdn.nekos.life/wallpaper/QOSUXEbzDQA.png','https://cdn.nekos.life/wallpaper/khaqGIHsiqk.jpg','https://cdn.nekos.life/wallpaper/iFtEXugqQgA.png','https://cdn.nekos.life/wallpaper/deFKIDdRe1I.jpg','https://cdn.nekos.life/wallpaper/OHZVtvDm0gk.jpg','https://cdn.nekos.life/wallpaper/YZYa00Hp2mk.jpg','https://cdn.nekos.life/wallpaper/R8nPIKQKo9g.png','https://cdn.nekos.life/wallpaper/_brn3qpRBEE.jpg','https://cdn.nekos.life/wallpaper/ADTEQdaHhFI.png','https://cdn.nekos.life/wallpaper/MGvWl6om-Fw.jpg','https://cdn.nekos.life/wallpaper/YGmpjZW3AoQ.jpg','https://cdn.nekos.life/wallpaper/hNCgoY-mQPI.jpg','https://cdn.nekos.life/wallpaper/3db40hylKs8.png','https://cdn.nekos.life/wallpaper/iQ2FSo5nCF8.jpg','https://cdn.nekos.life/wallpaper/meaSEfeq9QM.png','https://cdn.nekos.life/wallpaper/CmEmn79xnZU.jpg','https://cdn.nekos.life/wallpaper/MAL18nB-yBI.jpg','https://cdn.nekos.life/wallpaper/FUuBi2xODuI.jpg','https://cdn.nekos.life/wallpaper/ez-vNNuk6Ck.jpg','https://cdn.nekos.life/wallpaper/K4-z0Bc0Vpc.jpg','https://cdn.nekos.life/wallpaper/Y4JMbswrNg8.jpg','https://cdn.nekos.life/wallpaper/ffbPXIxt4-0.png','https://cdn.nekos.life/wallpaper/x63h_W8KFL8.jpg','https://cdn.nekos.life/wallpaper/lktzjDRhWyg.jpg','https://cdn.nekos.life/wallpaper/j7oQtvRZBOI.jpg','https://cdn.nekos.life/wallpaper/MQQEAD7TUpQ.png','https://cdn.nekos.life/wallpaper/lEG1-Eeva6Y.png','https://cdn.nekos.life/wallpaper/Loh5wf0O5Aw.png','https://cdn.nekos.life/wallpaper/yO6ioREenLA.png','https://cdn.nekos.life/wallpaper/4vKWTVgMNDc.jpg','https://cdn.nekos.life/wallpaper/Yk22OErU8eg.png','https://cdn.nekos.life/wallpaper/Y5uf1hsnufE.png','https://cdn.nekos.life/wallpaper/xAmBpMUd2Zw.jpg','https://cdn.nekos.life/wallpaper/f_RWFoWciRE.jpg','https://cdn.nekos.life/wallpaper/Y9qjP2Y__PA.jpg','https://cdn.nekos.life/wallpaper/eqEzgohpPwc.jpg','https://cdn.nekos.life/wallpaper/s1MBos_ZGWo.jpg','https://cdn.nekos.life/wallpaper/PtW0or_Pa9c.png','https://cdn.nekos.life/wallpaper/32EAswpy3M8.png','https://cdn.nekos.life/wallpaper/Z6eJZf5xhcE.png','https://cdn.nekos.life/wallpaper/xdiSF731IFY.jpg','https://cdn.nekos.life/wallpaper/Y9r9trNYadY.png','https://cdn.nekos.life/wallpaper/8bH8CXn-sOg.jpg','https://cdn.nekos.life/wallpaper/a02DmIFzRBE.png','https://cdn.nekos.life/wallpaper/MnrbXcPa7Oo.png','https://cdn.nekos.life/wallpaper/s1Tc9xnugDk.jpg','https://cdn.nekos.life/wallpaper/zRqEx2gnfmg.jpg','https://cdn.nekos.life/wallpaper/PtW0or_Pa9c.png','https://cdn.nekos.life/wallpaper/0ECCRW9soHM.jpg','https://cdn.nekos.life/wallpaper/kAw8QHl_wbM.jpg','https://cdn.nekos.life/wallpaper/ZXcaFmpOlLk.jpg','https://cdn.nekos.life/wallpaper/WVEdi9Ng8UE.png','https://cdn.nekos.life/wallpaper/IRu29rNgcYU.png','https://cdn.nekos.life/wallpaper/LgIJ_1AL3rM.jpg','https://cdn.nekos.life/wallpaper/DVD5_fLJEZA.jpg','https://cdn.nekos.life/wallpaper/siqOQ7k8qqk.jpg','https://cdn.nekos.life/wallpaper/CXNX_15eGEQ.png','https://cdn.nekos.life/wallpaper/s62tGjOTHnk.jpg','https://cdn.nekos.life/wallpaper/tmQ5ce6EfJE.png','https://cdn.nekos.life/wallpaper/Zju7qlBMcQ4.jpg','https://cdn.nekos.life/wallpaper/CPOc_bMAh2Q.png','https://cdn.nekos.life/wallpaper/Ew57S1KtqsY.jpg','https://cdn.nekos.life/wallpaper/hVpFbYJmZZc.jpg','https://cdn.nekos.life/wallpaper/sb9_J28pftY.jpg','https://cdn.nekos.life/wallpaper/JDoIi_IOB04.jpg','https://cdn.nekos.life/wallpaper/rG76AaUZXzk.jpg','https://cdn.nekos.life/wallpaper/9ru2luBo360.png','https://cdn.nekos.life/wallpaper/ghCgiWFxGwY.png','https://cdn.nekos.life/wallpaper/OSR-i-Rh7ZY.png','https://cdn.nekos.life/wallpaper/65VgtPyweCc.jpg','https://cdn.nekos.life/wallpaper/3vn-0FkNSbM.jpg','https://cdn.nekos.life/wallpaper/u02Y0-AJPL0.jpg','https://cdn.nekos.life/wallpaper/_-Z-0fGflRc.jpg','https://cdn.nekos.life/wallpaper/3VjNKqEPp58.jpg','https://cdn.nekos.life/wallpaper/NoG4lKnk6Sc.jpg','https://cdn.nekos.life/wallpaper/xiTxgRMA_IA.jpg','https://cdn.nekos.life/wallpaper/yq1ZswdOGpg.png','https://cdn.nekos.life/wallpaper/4SUxw4M3UMA.png','https://cdn.nekos.life/wallpaper/cUPnQOHNLg0.jpg','https://cdn.nekos.life/wallpaper/zczjuLWRisA.jpg','https://cdn.nekos.life/wallpaper/TcxvU_diaC0.png','https://cdn.nekos.life/wallpaper/7qqWhEF_uoY.jpg','https://cdn.nekos.life/wallpaper/J4t_7DvoUZw.jpg','https://cdn.nekos.life/wallpaper/xQ1Pg5D6J4U.jpg','https://cdn.nekos.life/wallpaper/aIMK5Ir4xho.jpg','https://cdn.nekos.life/wallpaper/6gneEXrNAWU.jpg','https://cdn.nekos.life/wallpaper/PSvNdoISWF8.jpg','https://cdn.nekos.life/wallpaper/SjgF2-iOmV8.jpg','https://cdn.nekos.life/wallpaper/vU54ikOVY98.jpg','https://cdn.nekos.life/wallpaper/QjnfRwkRU-Q.jpg','https://cdn.nekos.life/wallpaper/uSKqzz6ZdXc.png','https://cdn.nekos.life/wallpaper/AMrcxZOnVBE.jpg','https://cdn.nekos.life/wallpaper/N1l8SCMxamE.jpg','https://cdn.nekos.life/wallpaper/n2cBaTo-J50.png','https://cdn.nekos.life/wallpaper/ZXcaFmpOlLk.jpg','https://cdn.nekos.life/wallpaper/7bwxy3elI7o.png','https://cdn.nekos.life/wallpaper/7VW4HwF6LcM.jpg','https://cdn.nekos.life/wallpaper/YtrPAWul1Ug.png','https://cdn.nekos.life/wallpaper/1p4_Mmq95Ro.jpg','https://cdn.nekos.life/wallpaper/EY5qz5iebJw.png','https://cdn.nekos.life/wallpaper/aVDS6iEAIfw.jpg','https://cdn.nekos.life/wallpaper/veg_xpHQfjE.jpg','https://cdn.nekos.life/wallpaper/meaSEfeq9QM.png','https://cdn.nekos.life/wallpaper/Xa_GtsKsy-s.png','https://cdn.nekos.life/wallpaper/6Bx8R6D75eM.png','https://cdn.nekos.life/wallpaper/zXOGXH_b8VY.png','https://cdn.nekos.life/wallpaper/VQcviMxoQ00.png','https://cdn.nekos.life/wallpaper/CJnRl-PKWe8.png','https://cdn.nekos.life/wallpaper/zEWYfFL_Ero.png','https://cdn.nekos.life/wallpaper/_C9Uc5MPaz4.png','https://cdn.nekos.life/wallpaper/zskxNqNXyG0.jpg','https://cdn.nekos.life/wallpaper/g7w14PjzzcQ.jpg','https://cdn.nekos.life/wallpaper/KavYXR_GRB4.jpg','https://cdn.nekos.life/wallpaper/Z_r9WItzJBc.jpg','https://cdn.nekos.life/wallpaper/Qps-0JD6834.jpg','https://cdn.nekos.life/wallpaper/Ri3CiJIJ6M8.png','https://cdn.nekos.life/wallpaper/ArGYIpJwehY.jpg','https://cdn.nekos.life/wallpaper/uqYKeYM5h8w.jpg','https://cdn.nekos.life/wallpaper/h9cahfuKsRg.jpg','https://cdn.nekos.life/wallpaper/iNPWKO8d2a4.jpg','https://cdn.nekos.life/wallpaper/j2KoFVhsNig.jpg','https://cdn.nekos.life/wallpaper/z5Nc-aS6QJ4.jpg','https://cdn.nekos.life/wallpaper/VUFoK8l1qs0.png','https://cdn.nekos.life/wallpaper/rQ8eYh5mXN8.png','https://cdn.nekos.life/wallpaper/D3NxNISDavQ.png','https://cdn.nekos.life/wallpaper/Z_CiozIenrU.jpg','https://cdn.nekos.life/wallpaper/np8rpfZflWE.jpg','https://cdn.nekos.life/wallpaper/ED-fgS09gik.jpg','https://cdn.nekos.life/wallpaper/AB0Cwfs1X2w.jpg','https://cdn.nekos.life/wallpaper/DZBcYfHouiI.jpg','https://cdn.nekos.life/wallpaper/lC7pB-GRAcQ.png','https://cdn.nekos.life/wallpaper/zrI-sBSt2zE.png','https://cdn.nekos.life/wallpaper/_RJhylwaCLk.jpg','https://cdn.nekos.life/wallpaper/6km5m_GGIuw.png','https://cdn.nekos.life/wallpaper/3db40hylKs8.png','https://cdn.nekos.life/wallpaper/oggceF06ONQ.jpg','https://cdn.nekos.life/wallpaper/ELdH2W5pQGo.jpg','https://cdn.nekos.life/wallpaper/Zun_n5pTMRE.png','https://cdn.nekos.life/wallpaper/VqhFKG5U15c.png','https://cdn.nekos.life/wallpaper/NsMoiW8JZ60.jpg','https://cdn.nekos.life/wallpaper/XE4iXbw__Us.png','https://cdn.nekos.life/wallpaper/a9yXhS2zbhU.jpg','https://cdn.nekos.life/wallpaper/jjnd31_3Ic8.jpg','https://cdn.nekos.life/wallpaper/Nxanxa-xO3s.png','https://cdn.nekos.life/wallpaper/dBHlPcbuDc4.jpg','https://cdn.nekos.life/wallpaper/6wUZIavGVQU.jpg','https://cdn.nekos.life/wallpaper/_-Z-0fGflRc.jpg','https://cdn.nekos.life/wallpaper/H9OUpIrF4gU.jpg','https://cdn.nekos.life/wallpaper/xlRdH3fBMz4.jpg','https://cdn.nekos.life/wallpaper/7IzUIeaae9o.jpg','https://cdn.nekos.life/wallpaper/FZCVL6PyWq0.jpg','https://cdn.nekos.life/wallpaper/5dG-HH6d0yw.png','https://cdn.nekos.life/wallpaper/ddxyA37HiwE.png','https://cdn.nekos.life/wallpaper/I0oj_jdCD4k.jpg','https://cdn.nekos.life/wallpaper/ABchTV97_Ts.png','https://cdn.nekos.life/wallpaper/58C37kkq39Y.png','https://cdn.nekos.life/wallpaper/HMS5mK7WSGA.jpg','https://cdn.nekos.life/wallpaper/1O3Yul9ojS8.jpg','https://cdn.nekos.life/wallpaper/hdZI1XsYWYY.jpg','https://cdn.nekos.life/wallpaper/h8pAJJnBXZo.png','https://cdn.nekos.life/wallpaper/apO9K9JIUp8.jpg','https://cdn.nekos.life/wallpaper/p8f8IY_2mwg.jpg','https://cdn.nekos.life/wallpaper/HY1WIB2r_cE.jpg','https://cdn.nekos.life/wallpaper/u02Y0-AJPL0.jpg','https://cdn.nekos.life/wallpaper/jzN74LcnwE8.png','https://cdn.nekos.life/wallpaper/IeAXo5nJhjw.jpg','https://cdn.nekos.life/wallpaper/7lgPyU5fuLY.jpg','https://cdn.nekos.life/wallpaper/f8SkRWzXVxk.png','https://cdn.nekos.life/wallpaper/ZmDTpGGeMR8.jpg','https://cdn.nekos.life/wallpaper/AMrcxZOnVBE.jpg','https://cdn.nekos.life/wallpaper/ZhP-f8Icmjs.jpg','https://cdn.nekos.life/wallpaper/7FyUHX3fE2o.jpg','https://cdn.nekos.life/wallpaper/CZoSLK-5ng8.png','https://cdn.nekos.life/wallpaper/pSNDyxP8l3c.png','https://cdn.nekos.life/wallpaper/AhYGHF6Fpck.jpg','https://cdn.nekos.life/wallpaper/ic6xRRptRes.jpg','https://cdn.nekos.life/wallpaper/89MQq6KaggI.png','https://cdn.nekos.life/wallpaper/y1DlFeHHTEE.png']
             let walnimek = walnime[Math.floor(Math.random() * walnime.length)]
-            tobz.sendFileFromUrl(from, walnimek, 'Nimek.jpg', '', id)
+            xbot.sendFileFromUrl(from, walnimek, 'Nimek.jpg', '', id)
             break*/
         case '#quotesnime':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            const skya = await axios.get('https://mhankbarbar.herokuapp.com/api/quotesnime/random')
+            const skya = await axios.get('https://mhankbarbars.herokuapp.com/api/quotesnime/random')
             skya_ = skya.data
-            tobz.reply(from, `➸ *Quotes* : ${skya_.quote}\n➸ *Character* : ${skya_.character}\n➸ *Anime* : ${skya_.anime}`, id)
+            xbot.reply(from, `➸ *Quotes* : ${skya_.quote}\n➸ *Character* : ${skya_.character}\n➸ *Anime* : ${skya_.anime}`, id)
             break
         case '#meme':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const response = await axios.get('https://meme-api.herokuapp.com/gimme/wholesomeanimemes')
             const { postlink, title, subreddit, url, nsfw, spoiler } = response.data
-            tobz.sendFileFromUrl(from, `${url}`, 'meme.jpg', `${title}`)
+            xbot.sendFileFromUrl(from, `${url}`, 'meme.jpg', `${title}`)
             break
         /* case '#nekopoi':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isNsfw) return tobz.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#nekopoi [linkNekopoi]*\nContoh : *#nekopoi https://nekopoi.care/tsunpuri-episode-1-subtitle-indonesia/*', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isNsfw) return xbot.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#nekopoi [linkNekopoi]*\nContoh : *#nekopoi https://nekopoi.care/tsunpuri-episode-1-subtitle-indonesia/*', id)
             try {
-            tobz.reply(from, mess.wait, id)
-            const nekipoi = await axios.get('https://mhankbarbar.herokuapp.com/api/nekopoi?url=' + body.slice(7) + '&apikey=' + vhtearkey)
+            xbot.reply(from, mess.wait, id)
+            const nekipoi = await axios.get('https://mhankbarbars.herokuapp.com/api/nekopoi?url=' + body.slice(7) + '&apikey=' + vhtearkey)
             const nekop = nekipoi.data.result
             const nekop2 = `*Anime Ditemukan!*\n➸ Judul : ${nekop.judul}\n➸ Dilihat : ${nekop.dilihat}\n➸ Info : ${nekop.info}`
             const image = await bent("buffer")(nekop.thumbnail)
             const base64 = `data:image/jpg;base64,${image.toString("base64")}`
-            tobz.sendImage(from, base64, judul, nekop2)
+            xbot.sendImage(from, base64, judul, nekop2)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Video tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Nekopoi Error : ' + err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Video tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Nekopoi Error : ' + err)
            } */
             break
         case '#quoteanime':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
                         if(args[1]){
@@ -1096,9 +1131,9 @@ ${desc}`)
                                     let quote = data.data[0].quote 
                                     let char = data.data[0].character
                                     let anime = data.data[0].anime
-                                    tobz.sendText(from, `"${quote}"\n\nCharacter : ${char}\nAnime : ${anime}`)
+                                    xbot.sendText(from, `"${quote}"\n\nCharacter : ${char}\nAnime : ${anime}`)
                                 }).catch(err => {
-                                    tobz.sendText('Quote Char/Anime tidak ditemukan!')
+                                    xbot.sendText('Quote Char/Anime tidak ditemukan!')
                                 })
                             }else{
                                 const char = body.slice(12)
@@ -1106,9 +1141,9 @@ ${desc}`)
                                     let quote = data.data[0].quote 
                                     let char = data.data[0].character
                                     let anime = data.data[0].anime
-                                    tobz.sendText(from, `"${quote}"\n\nCharacter : ${char}\nAnime : ${anime}`)
+                                    xbot.sendText(from, `"${quote}"\n\nCharacter : ${char}\nAnime : ${anime}`)
                                 }).catch(err => {
-                                    tobz.sendText('Quote Char/Anime tidak ditemukan!')
+                                    xbot.sendText('Quote Char/Anime tidak ditemukan!')
                                 })
                             }
                         }else{
@@ -1119,15 +1154,15 @@ ${desc}`)
                                 let lagu = data.result[0].linkMp3 
                                 let size = data.result[0].filesize
                                 let durasi = data.result[0].duration
-                                tobz.sendText(from, `"${quote}"\n\nCharacter : ${char}\nAnime : ${anime}`)                               
+                                xbot.sendText(from, `"${quote}"\n\nCharacter : ${char}\nAnime : ${anime}`)                               
                             }).catch(err => {
                                 console.log(err)
                             })
                         }
             break
         case '#malanime':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const keyword = message.body.replace('#malanime', '')
@@ -1137,7 +1172,7 @@ ${desc}`)
             )
             const parsed = await data.json()
             if (!parsed) {
-              await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan', id)
+              await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan', id)
               return null
               }
             const { title, synopsis, episodes, url, rated, score, image_url } = parsed.results[0]
@@ -1151,15 +1186,15 @@ ${desc}`)
 
             const image = await bent("buffer")(image_url)
             const base64 = `data:image/jpg;base64,${image.toString("base64")}`
-            tobz.sendImage(from, base64, title, content)
+            xbot.sendImage(from, base64, title, content)
            } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan')
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan')
            }
           break
         case '#malcharacter':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const keywords = message.body.replace('#malcharacter', '')
@@ -1169,7 +1204,7 @@ ${desc}`)
             )
             const parsed = await data.json()
             if (!parsed) {
-              await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan', id)
+              await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan', id)
               return null
               }
             const { name, alternative_names, url, image_url } = parsed.results[0]
@@ -1181,21 +1216,21 @@ ${desc}`)
 
             const image = await bent("buffer")(image_url)
             const base64 = `data:image/jpg;base64,${image.toString("base64")}`
-            tobz.sendImage(from, base64, name, contentt)
+            xbot.sendImage(from, base64, name, contentt)
            } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan')
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan')
            }
           break
         // PRAY //
         case '#jadwalshalat':
         case '#jadwalsholat':
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length === 1) return tobz.reply(from, `[❗] Kirim perintah *#jadwalShalat [ Daerah ]*\ncontoh : *#jadwalShalat Tangerang*\nUntuk list daerah kirim perintah *#listDaerah*`)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `[❗] Kirim perintah *#jadwalShalat [ Daerah ]*\ncontoh : *#jadwalShalat Tangerang*\nUntuk list daerah kirim perintah *#listDaerah*`)
             const daerah = body.slice(14)
             const jadwalShalat = await axios.get(`https://api.vhtear.com/jadwalsholat?query=${daerah}&apiKey=${vhtearkey}`)
-            if (jadwalShalat.data.error) return tobz.reply(from, jadwalShalat.data.error, id)
+            if (jadwalShalat.data.error) return xbot.reply(from, jadwalShalat.data.error, id)
             const { Shubuh, Zduhur, Ashr, Magrib, Isya, kota } = await jadwalShalat.data
             arrbulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
             tgl = new Date().getDate()
@@ -1205,18 +1240,18 @@ ${desc}`)
             await limitAdd(serial)
             break
         case '#quran':
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length === 1) return tobz.reply(from, `Kirim perintah Surah Quran kamu dengan cara ketik perintah :\n*#quran* [ Urutan Surat ]\nContoh :\n*#quran 1*`, id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah Surah Quran kamu dengan cara ketik perintah :\n*#quran* [ Urutan Surat ]\nContoh :\n*#quran 1*`, id)
             const qura = `https://api.vhtear.com/quran?no=${args[1]}&apikey=${vhtearkey}`
             const quraan = await axios.get(qura)
             const quraann = quraan.data
             let hasqu = `*「 AL-QURAN 」*\n\n*Surah : ${quraann.result.surah}*\n*Quran* : ${quraann.result.quran}*`
-            await tobz.reply(from, `${hasqu}`, id).catch((e) => tobz.reply(from, `*Terdapat kesalahan saat mencari surat ${args[1]}*`, id))
+            await xbot.reply(from, `${hasqu}`, id).catch((e) => xbot.reply(from, `*Terdapat kesalahan saat mencari surat ${args[1]}*`, id))
             await limitAdd(serial)
             break
         case '#listsurah':
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
             try {
                 axios.get('https://raw.githubusercontent.com/ArugaZ/scraper-results/main/islam/surah.json')
                 .then((response) => {
@@ -1227,16 +1262,16 @@ ${desc}`)
                         nmr++
                             }
                         hehex += '___________________________'
-                    tobz.reply(from, hehex, id)
+                    xbot.reply(from, hehex, id)
                 })
             } catch(err) {
-                tobz.reply(from, err, id)
+                xbot.reply(from, err, id)
             }
             break
         case '#infosurah':
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length == 1) return tobz.reply(from, `Kirim perintah *#infosurah [ Nama Surah ]*\nContoh : *#infosurah al-fatihah*`, message.id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length == 1) return xbot.reply(from, `Kirim perintah *#infosurah [ Nama Surah ]*\nContoh : *#infosurah al-fatihah*`, message.id)
                 var responseh = await axios.get('https://raw.githubusercontent.com/ArugaZ/scraper-results/main/islam/surah.json')
                 var { data } = responseh.data
                 var idx = data.findIndex(function(post, index) {
@@ -1247,16 +1282,16 @@ ${desc}`)
                     var pesan = "*「 INFORMASI SURAH 」*\n\n___________________________\n\n"
                     pesan = pesan + "➸ *Nama* : "+ data[idx].name.transliteration.id + "\n" + "➸ *Asma* : " +data[idx].name.short+"\n"+"➸ *Arti* : "+data[idx].name.translation.id+"\n"+"➸ *Jumlah ayat* : "+data[idx].numberOfVerses+"\n"+"➸ *Nomor surah* : "+data[idx].number+"\n"+"Jenis : "+data[idx].revelation.id+"\n"+"➸ *Keterangan* : "+data[idx].tafsir.id
                     pesan += '\n\n___________________________'
-                    tobz.reply(from, pesan, message.id)
+                    xbot.reply(from, pesan, message.id)
                     limitAdd(serial)
                 }catch{
-                    tobz.reply(from, 'Data tidak ditemukan, atau nama surah salah', id)
+                    xbot.reply(from, 'Data tidak ditemukan, atau nama surah salah', id)
                 }
             break
         case '#tafsir':
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length == 1) return tobz.reply(from, `Kirim perintah *#tafsir [ Nama Surah ] [ Ayat ]*\nContoh : *#tafsir al-fatihah 2*`, message.id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length == 1) return xbot.reply(from, `Kirim perintah *#tafsir [ Nama Surah ] [ Ayat ]*\nContoh : *#tafsir al-fatihah 2*`, message.id)
                 var responsh = await axios.get('https://raw.githubusercontent.com/ArugaZ/scraper-results/main/islam/surah.json')
                 var {data} = responsh.data
                 var idx = data.findIndex(function(post, index) {
@@ -1273,66 +1308,66 @@ ${desc}`)
                     pesan = pesan + data.text.arab + "\n\n"
                     pesan = pesan + "_" + data.translation.id + "_" + "\n\n" +data.tafsir.id.long
                     pesan += '\n\n___________________________'
-                    tobz.reply(from, pesan, message.id)
+                    xbot.reply(from, pesan, message.id)
                     limitAdd(serial)
                 }
             }catch{
-                tobz.reply(from, 'Data tidak ditemukan, mungkin nama surah/ayat salah', id)
+                xbot.reply(from, 'Data tidak ditemukan, mungkin nama surah/ayat salah', id)
             }
             break
         // MEDIA //
         case '#infogempa':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            const bmkg = await axios.get('https://mhankbarbar.herokuapp.com/api/infogempa'+'?apiKey='+barbarkey)
+            const bmkg = await axios.get('https://mhankbarbars.herokuapp.com/api/infogempa'+'?apiKey='+barbarkey)
             const { potensi, koordinat, lokasi, kedalaman, magnitude, waktu, map } = bmkg.data
             const hasil = `*${waktu}*\n📍 *Lokasi* : *${lokasi}*\n〽️ *Kedalaman* : *${kedalaman}*\n💢 *Magnitude* : *${magnitude}*\n🔘 *Potensi* : *${potensi}*\n📍 *Koordinat* : *${koordinat}*`
-            tobz.sendFileFromUrl(from, map, 'shakemap.jpg', hasil, id)
+            xbot.sendFileFromUrl(from, map, 'shakemap.jpg', hasil, id)
             break
         case '#ssweb':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#ssweb [linkWeb]*\nContoh : *#ssweb https://neonime.vip*', id)
-            const ssw = await axios.get('https://mhankbarbar.herokuapp.com/api/url2image?url=' + body.slice(7) + '&apiKey=' + barbarkey)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#ssweb [linkWeb]*\nContoh : *#ssweb https://neonime.vip*', id)
+            const ssw = await axios.get('https://mhankbarbars.herokuapp.com/api/url2image?url=' + body.slice(7) + '&apiKey=' + barbarkey)
             const ssww = ssw.data
-            if (ssww.error) return tobz.reply(from, ssww.error, id)
+            if (ssww.error) return xbot.reply(from, ssww.error, id)
             const ssw2 = `Filesize: ${ssww.filesize}`
-            tobz.sendFileFromUrl(from, ssww.result, 'ssweb.jpg', ssw2, id)
+            xbot.sendFileFromUrl(from, ssww.result, 'ssweb.jpg', ssw2, id)
             break
         case '#shorturl':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#shorturl [linkWeb]*\nContoh : *#shorturl https://neonime.vip*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#shorturl [linkWeb]*\nContoh : *#shorturl https://neonime.vip*', id)
             const surl = await axios.get('https://api.vhtear.com/shortener?link=' + body.slice(10) + '&apikey=' + vhtearkey)
             const surll = surl.data
-            if (surll.error) return tobz.reply(from, ssww.error, id)
+            if (surll.error) return xbot.reply(from, ssww.error, id)
             const surl2 = `Link : ${surll.result.Url}\nShort URL : ${surll.result.Short}`
-            tobz.sendText(from, surl2, id)
+            xbot.sendText(from, surl2, id)
             break
         case '#cuaca':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#cuaca [tempat]*\nContoh : *#cuaca tangerang', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#cuaca [tempat]*\nContoh : *#cuaca tangerang', id)
             const tempat = body.slice(7)
-            const weather = await axios.get('https://mhankbarbar.herokuapp.com/api/cuaca?q='+ tempat +'&apiKey='+ barbarkey)
+            const weather = await axios.get('https://mhankbarbars.herokuapp.com/api/cuaca?q='+ tempat +'&apiKey='+ barbarkey)
             const weatherr = weather.data
             if (weatherr.error) {
-                tobz.reply(from, weatherr.error, id)
+                xbot.reply(from, weatherr.error, id)
             } else {
-                tobz.reply(from, `➸ Tempat : ${weatherr.result.tempat}\n\n➸ Angin : ${weatherr.result.angin}\n➸ Cuaca : ${weatherr.result.cuaca}\n➸ Deskripsi : ${weatherr.result.desk}\n➸ Kelembapan : ${weatherr.result.kelembapan}\n➸ Suhu : ${weatherr.result.suhu}\n➸ Udara : ${weatherr.result.udara}`, id)
+                xbot.reply(from, `➸ Tempat : ${weatherr.result.tempat}\n\n➸ Angin : ${weatherr.result.angin}\n➸ Cuaca : ${weatherr.result.cuaca}\n➸ Deskripsi : ${weatherr.result.desk}\n➸ Kelembapan : ${weatherr.result.kelembapan}\n➸ Suhu : ${weatherr.result.suhu}\n➸ Udara : ${weatherr.result.udara}`, id)
             }
             break
         case '#covid':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             arg = body.trim().split(' ')
@@ -1343,122 +1378,247 @@ ${desc}`)
             console.log(country)
             const response2 = await axios.get('https://coronavirus-19-api.herokuapp.com/countries/' + country + '/')
             const { cases, todayCases, deaths, todayDeaths, active } = response2.data
-                await tobz.sendText(from, '🌎️ Covid Info - ' + country + ' 🌍️\n\n✨️ Total Cases: ' + `${cases}` + '\n📆️ Today\'s Cases: ' + `${todayCases}` + '\n☣️ Total Deaths: ' + `${deaths}` + '\n☢️ Today\'s Deaths: ' + `${todayDeaths}` + '\n⛩️ Active Cases: ' + `${active}` + '.')
+                await xbot.sendText(from, '🌎️ Covid Info - ' + country + ' 🌍️\n\n✨️ Total Cases: ' + `${cases}` + '\n📆️ Today\'s Cases: ' + `${todayCases}` + '\n☣️ Total Deaths: ' + `${deaths}` + '\n☢️ Today\'s Deaths: ' + `${todayDeaths}` + '\n⛩️ Active Cases: ' + `${active}` + '.')
             break
+		case '#cekjodoh':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+
+			if (args.length !== 2) return xbot.reply(from, `Untuk mengecek jodoh melalui nama\nketik: #cekjodoh nama-kamu nama-pasangan\n\ncontoh: #cekjodoh Alif Fafa\n\nhanya bisa pakai nama panggilan (satu kata)`)
+			rugaapi.cekjodoh(args[0],args[1])
+			.then(async(res) => {
+				await xbot.sendFileFromUrl(from, `${res.link}`, '', `${res.text}`, id)
+			})
+			break
+			
+        // Random Kata
+	case '#motivasi':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            fetch('https://raw.githubusercontent.com/selyxn/motivasi/main/motivasi.txt')
+            .then(res => res.text())
+            .then(body => {
+                let splitmotivasi = body.split('\n')
+                let randommotivasi = splitmotivasi[Math.floor(Math.random() * splitmotivasi.length)]
+                xbot.reply(from, randommotivasi, id)
+            })
+            .catch(() => {
+                xbot.reply(from, 'Ada yang Error!', id)
+            })
+            break
+	case '#howgay':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+
+		if (args.length == 0) return xbot.reply(from, `Untuk mengetahui seberapa gay seseorang gunakan #howgay namanya\n\nContoh: #howgay Nazaar`, id)
+            fetch('https://raw.githubusercontent.com/MrPawNO/howgay/main/howgay.txt')
+            .then(res => res.text())
+            .then(body => {
+                let splithowgay = body.split('\n')
+                let randomhowgay = splithowgay[Math.floor(Math.random() * splithowgay.length)]
+                xbot.reply(from, randomhowgay, id)
+            })
+            .catch(() => {
+                xbot.reply(from, 'Ada yang Error!', id)
+            })
+            break
+        case '#fakta':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            fetch('https://raw.githubusercontent.com/ArugaZ/grabbed-results/main/random/faktaunix.txt')
+            .then(res => res.text())
+            .then(body => {
+                let splitnix = body.split('\n')
+                let randomnix = splitnix[Math.floor(Math.random() * splitnix.length)]
+                xbot.reply(from, randomnix, id)
+            })
+            .catch(() => {
+                xbot.reply(from, 'Ada yang Error!', id)
+            })
+            break
+        case '#katabijak':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            fetch('https://raw.githubusercontent.com/ArugaZ/grabbed-results/main/random/katabijax.txt')
+            .then(res => res.text())
+            .then(body => {
+                let splitbijak = body.split('\n')
+                let randombijak = splitbijak[Math.floor(Math.random() * splitbijak.length)]
+                xbot.reply(from, randombijak, id)
+            })
+            .catch(() => {
+                xbot.reply(from, 'Ada yang Error!', id)
+            })
+            break
+        case '#pantun':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)    
+			fetch('https://raw.githubusercontent.com/ArugaZ/grabbed-results/main/random/pantun.txt')
+            .then(res => res.text())
+            .then(body => {
+                let splitpantun = body.split('\n')
+                let randompantun = splitpantun[Math.floor(Math.random() * splitpantun.length)]
+                xbot.reply(from, randompantun.replace(/aruga-line/g,"\n"), id)
+            })
+            .catch(() => {
+                xbot.reply(from, 'Ada yang Error!', id)
+            })
+            break
+        case '#quote':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            const quotex = await rugaapi.quote()
+            await xbot.reply(from, quotex, id)
+            .catch(() => {
+                xbot.reply(from, 'Ada yang Error!', id)
+            })
+            break
+		case '#cerpen':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+			rugaapi.cerpen()
+			.then(async (res) => {
+				await xbot.reply(from, res.result, id)
+			})
+			break
+		case '#cersex':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+			rugaapi.cersex()
+			.then(async (res) => {
+				await xbot.reply(from, res.result, id)
+			})
+			break
+		case '#puisi':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+			rugaapi.puisi()
+			.then(async (res) => {
+				await xbot.reply(from, res.result, id)
+			})
+			break
+
         case '#spamcall':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (!isOwner, !isAdmin) return tobz.reply(from, 'Perintah ini hanya untuk Owner & Admin bot', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (!isOwner, !isAdmin) return xbot.reply(from, 'Perintah ini hanya untuk Owner & Admin bot', id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
             console.log(slicedArgs)
             const spam = await slicedArgs.join(' ')
             console.log(spam)
-            const call2 = await axios.get('https://mhankbarbar.herokuapp.com/api/spamcall?no=' + spam)
+            const call2 = await axios.get('https://mhankbarbars.herokuapp.com/api/spamcall?no=' + spam)
             const { logs } = call2.data
-                await tobz.sendText(from, `Logs : ${logs}` + '.')
+                await xbot.sendText(from, `Logs : ${logs}` + '.')
             break
         case '#ytmp4':
-            if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length === 1) return tobz.reply(from, `Kirim perintah *#ytmp4 [ Link Yt ]*, untuk contoh silahkan kirim perintah *#readme*`)
+           // // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#ytmp4 [ Link Yt ]*, untuk contoh silahkan kirim perintah *#readme*`)
             let isLin = args[1].match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/)
-            if (!isLin) return tobz.reply(from, mess.error.Iv, id)
+            if (!isLin) return xbot.reply(from, mess.error.Iv, id)
             try {
-                tobz.reply(from, mess.wait, id)
+                xbot.reply(from, mess.wait, id)
                 const ytvh = await fetch(`http://api.vhtear.com/ytdl?link=${args[1]}&apikey=${vhtearkey}`)
                 if (!ytvh.ok) throw new Error(`Error Get Video : ${ytvh.statusText}`)
                 const ytvh2 = await ytvh.json()
                  if (ytvh2.status == false) {
-                    tobz.reply(from, `*Maaf Terdapat kesalahan saat mengambil data, mohon pilih media lain...*`, id)
+                    xbot.reply(from, `*Maaf Terdapat kesalahan saat mengambil data, mohon pilih media lain...*`, id)
                 } else {
-                    if (Number(ytvh2.result.size.split(' MB')[0]) > 30.00) return tobz.reply(from, `Maaf durasi video sudah melebihi batas maksimal 30 MB!`, id)
+                    if (Number(ytvh2.result.size.split(' MB')[0]) > 30.00) return xbot.reply(from, `Maaf durasi video sudah melebihi batas maksimal 30 MB!`, id)
                     const { title, UrlVideo, imgUrl, size } = await ytvh2.result
-                    tobz.sendFileFromUrl(from, imgUrl, 'thumb.jpg', `*「 YOUTUBE MP4 」*\n\n➸ *Judul* : ${title}\n➸ *Filesize* : ${size}\n\n_*Untuk durasi lebih dari batas disajikan dalam bentuk link*._\n${UrlVideo}`, id)
-                    await tobz.sendFileFromUrl(from, UrlVideo, `${title}.mp4`, '', id).catch(() => tobz.reply(from, mess.error.Yt4, id))
+                    xbot.sendFileFromUrl(from, imgUrl, 'thumb.jpg', `*「 YOUTUBE MP4 」*\n\n➸ *Judul* : ${title}\n➸ *Filesize* : ${size}\n\n_*Untuk durasi lebih dari batas disajikan dalam bentuk link*._\n${UrlVideo}`, id)
+                    await xbot.sendFileFromUrl(from, UrlVideo, `${title}.mp4`, '', id).catch(() => xbot.reply(from, mess.error.Yt4, id))
                     await limitAdd(serial)
                 }
             } catch (err) {
-                tobz.sendText(ownerNumber, 'Error ytmp4 : '+ err)
-                tobz.reply(from, mess.error.Yt4, id)
+                xbot.sendText(ownerNumber, 'Error ytmp4 : '+ err)
+                xbot.reply(from, mess.error.Yt4, id)
                 console.log(err)
             }
             break
+case '#nobg':
+	    if (isMedia) {
+                try {
+                    var mediaData = await decryptMedia(message, uaOverride)
+                    var imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
+                    var base64img = imageBase64
+                    var outFile = './media/noBg.png'
+                    // untuk api key kalian bisa dapatkan pada website remove.bg
+                    var result = await removeBackgroundFromImageBase64({ base64img, apiKey: 'XLFgi9dscDMGXVHa5j6aYDMv', size: 'auto', type: 'auto', outFile })
+                    await fs.writeFile(outFile, result.base64img)
+                    await xbot.sendImageAsSticker(from, `data:${mimetype};base64,${result.base64img}`)
+                } catch(err) {
+                    console.log(err)
+                }
+            }
+            break
         case '#play':
-            if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #ceklimit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length == 1) return tobz.reply(from, `Untuk mencari lagu dari youtube\n\nPenggunaan: #play judul lagu`, id)
+          //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)         
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length == 1) return xbot.reply(from, `Untuk mencari lagu dari youtube\n\nPenggunaan: #play judul lagu`, id)
             try {
-                tobz.reply(from, mess.wait, id)
+                xbot.reply(from, mess.wait, id)
                 const serplay = body.slice(6)
                 const webplay = await fetch(`https://api.vhtear.com/ytmp3?query=${serplay}&apikey=${vhtearkey}`)
                 if (!webplay.ok) throw new Error(`Error Get Video : ${webplay.statusText}`)
                 const webplay2 = await webplay.json()
                  if (webplay2.status == false) {
-                    tobz.reply(from, `*Maaf Terdapat kesalahan saat mengambil data, mohon pilih media lain...*`, id)
+                    xbot.reply(from, `*Maaf Terdapat kesalahan saat mengambil data, mohon pilih media lain...*`, id)
                 } else {
-                    if (Number(webplay2.result.size.split(' MB')[0]) >= 10.00) return tobz.reply(from, 'Maaf durasi music sudah melebihi batas maksimal 10 MB!', id)
+                    if (Number(webplay2.result.size.split(' MB')[0]) >= 10.00) return xbot.reply(from, 'Maaf durasi music sudah melebihi batas maksimal 10 MB!', id)
                     const { image, mp3, size, ext, title, duration } = await webplay2.result
                     const captplay = `*「 PLAY 」*\n\n➸ *Judul* : ${title}\n➸ *Durasi* : ${duration}\n➸ *Filesize* : ${size}\n➸ *Exp* : ${ext}\n\n_*Music Sedang Dikirim*_`
-                    tobz.sendFileFromUrl(from, image, `thumb.jpg`, captplay, id)
-                    await tobz.sendFileFromUrl(from, mp3, `${title}.mp3`, '', id).catch(() => tobz.reply(from, mess.error.Yt4, id))
+                    xbot.sendFileFromUrl(from, image, `thumb.jpg`, captplay, id)
+                    await xbot.sendFileFromUrl(from, mp3, `${title}.mp3`, '', id).catch(() => xbot.reply(from, mess.error.Yt4, id))
                     await limitAdd(serial)
                 }
             } catch (err) {
-                tobz.sendText(ownerNumber, 'Error Play : '+ err)
-                tobz.reply(from, mess.error.Yt3, id)
+                xbot.sendText(ownerNumber, 'Error Play : '+ err)
+                xbot.reply(from, mess.error.Yt3, id)
             }
             break   
         case '#ytmp3':
-            if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length === 1) return tobz.reply(from, `Kirim perintah *#ytmp3 [ Link Yt ]*, untuk contoh silahkan kirim perintah *#readme*`, id)
+           // // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#ytmp3 [ Link Yt ]*, untuk contoh silahkan kirim perintah *#readme*`, id)
             let isLinks = args[1].match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/)
-            if (!isLinks) return tobz.reply(from, mess.error.Iv, id)
+            if (!isLinks) return xbot.reply(from, mess.error.Iv, id)
             try {
-                tobz.reply(from, mess.wait, id)
+                xbot.reply(from, mess.wait, id)
                 const vhtearyt3 = await fetch(`https://api.vhtear.com/ytdl?link=${args[1]}&apikey=${vhtearkey}`)
                 if (!vhtearyt3.ok) throw new Error(`Error ytmp3 3 : ${vhtearyt3.statusText}`)
                 const vhtearyt33 = await vhtearyt3.json()
                  if (vhtearyt33.status == false) {
-                    tobz.reply(from, `*Maaf Terdapat kesalahan saat mengambil data, mohon pilih media lain...*`, id)
+                    xbot.reply(from, `*Maaf Terdapat kesalahan saat mengambil data, mohon pilih media lain...*`, id)
                 } else {
-                    if (Number(vhtearyt33.result.size.split(' MB')[0]) >= 10.00) return tobz.reply(from, 'Maaf durasi audio sudah melebihi batas maksimal 10 MB!', id)
+                    if (Number(vhtearyt33.result.size.split(' MB')[0]) >= 10.00) return xbot.reply(from, 'Maaf durasi audio sudah melebihi batas maksimal 10 MB!', id)
                     const { title, ext, size, UrlMp3, status, imgUrl } = await vhtearyt33.result
                     const captions = `*「 YOUTUBE MP3 」*\n\n➸ *Judul* : ${title}\n➸ *Filesize* : ${size}\n\n_*Untuk durasi lebih dari batas disajikan dalam bentuk link*._\n${UrlMp3}`
-                    tobz.sendFileFromUrl(from, imgUrl, `thumb.jpg`, captions, id)
-                    await tobz.sendFileFromUrl(from, UrlMp3, `${title}.mp3`, '', id).catch(() => tobz.reply(from, mess.error.Yt4, id))
+                    xbot.sendFileFromUrl(from, imgUrl, `thumb.jpg`, captions, id)
+                    await xbot.sendFileFromUrl(from, UrlMp3, `${title}.mp3`, '', id).catch(() => xbot.reply(from, mess.error.Yt4, id))
                     await limitAdd(serial)
                 }
             } catch (err) {
-                tobz.sendText(ownerNumber, 'Error ytmp3 : '+ err)
-                tobz.reply(from, mess.error.Yt3, id)
+                xbot.sendText(ownerNumber, 'Error ytmp3 : '+ err)
+                xbot.reply(from, mess.error.Yt3, id)
             }
             break   
         case '#google':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            tobz.reply(from, mess.wait, id)
+            xbot.reply(from, mess.wait, id)
             const googleQuery = body.slice(8)
-            if(googleQuery == undefined || googleQuery == ' ') return tobz.reply(from, `*Hasil Pencarian : ${googleQuery}* tidak ditemukan`, id)
+            if(googleQuery == undefined || googleQuery == ' ') return xbot.reply(from, `*Hasil Pencarian : ${googleQuery}* tidak ditemukan`, id)
             google({ 'query': googleQuery }).then(results => {
             let vars = `_*Hasil Pencarian : ${googleQuery}*_\n`
             for (let i = 0; i < results.length; i++) {
                 vars +=  `\n═════════════════\n\n*Judul* : ${results[i].title}\n\n*Deskripsi* : ${results[i].snippet}\n\n*Link* : ${results[i].link}\n\n`
             }
-                tobz.reply(from, vars, id);
+                xbot.reply(from, vars, id);
             }).catch(e => {
                 console.log(e)
-                tobz.sendText(ownerNumber, 'Google Error : ' + e);
+                xbot.sendText(ownerNumber, 'Google Error : ' + e);
             })
             break
         case '#translate':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             if(args[1] == undefined || args[2] == undefined) return
@@ -1466,46 +1626,46 @@ ${desc}`)
                 var codelang = args[1]
                 var text = body.slice(11+codelang.length);
                 translatte(text, {to: codelang}).then(res => {
-                    tobz.sendText(from,res.text);
+                    xbot.sendText(from,res.text);
                     limitAdd(serial)
                 }).catch(err => {
-                     tobz.sendText(from,`[ERROR] Teks tidak ada, atau kode bahasa ${codelang} tidak support\n~> *#bahasa* untuk melihat list kode bahasa`);
+                     xbot.sendText(from,`[ERROR] Teks tidak ada, atau kode bahasa ${codelang} tidak support\n~> *#bahasa* untuk melihat list kode bahasa`);
                 });
             }
             break
         case '#xnxx':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isNsfw) return tobz.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isNsfw) return xbot.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#xnxx [linkXnxx]*, untuk contoh silahkan kirim perintah *#readme*')
-            if (!args[1].match(isUrl) && !args[1].includes('xnxx.com')) return tobz.reply(from, mess.error.Iv, id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#xnxx [linkXnxx]*, untuk contoh silahkan kirim perintah *#readme*')
+            if (!args[1].match(isUrl) && !args[1].includes('xnxx.com')) return xbot.reply(from, mess.error.Iv, id)
             try {
-                tobz.reply(from, mess.wait, id)
-                const resq = await axios.get('https://mhankbarbar.herokuapp.com/api/xnxx?url='+ args[1] +'&apiKey='+ barbarkey)
+                xbot.reply(from, mess.wait, id)
+                const resq = await axios.get('https://mhankbarbars.herokuapp.com/api/xnxx?url='+ args[1] +'&apiKey='+ barbarkey)
                 const resp = resq.data
                  if (resp.error) {
-                    tobz.reply(from, ytvv.error, id)
+                    xbot.reply(from, ytvv.error, id)
                 } else {
-                    if (Number(resp.result.size.split(' MB')[0]) > 20.00) return tobz.reply(from, 'Maaf durasi video sudah melebihi batas maksimal 20 menit!', id)
-                    tobz.sendFileFromUrl(from, resp.result.thumb, 'thumb.jpg', `➸ *Judul* : ${resp.result.judul}\n➸ *Deskripsi* : ${resp.result.desc}\n➸ *Filesize* : ${resp.result.size}\n\nSilahkan tunggu sebentar proses pengiriman file membutuhkan waktu beberapa menit.`, id)
-                    await tobz.sendFileFromUrl(from, resp.result.vid, `${resp.result.title}.mp4`, '', id)}
+                    if (Number(resp.result.size.split(' MB')[0]) > 20.00) return xbot.reply(from, 'Maaf durasi video sudah melebihi batas maksimal 20 menit!', id)
+                    xbot.sendFileFromUrl(from, resp.result.thumb, 'thumb.jpg', `➸ *Judul* : ${resp.result.judul}\n➸ *Deskripsi* : ${resp.result.desc}\n➸ *Filesize* : ${resp.result.size}\n\nSilahkan tunggu sebentar proses pengiriman file membutuhkan waktu beberapa menit.`, id)
+                    await xbot.sendFileFromUrl(from, resp.result.vid, `${resp.result.title}.mp4`, '', id)}
             } catch (err) {
                 console.log(err)
-                await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Video tidak ditemukan')
-                tobz.sendText(ownerNumber, 'Xnxx Error : ' + err)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Video tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Xnxx Error : ' + err)
             }
             break
         case '#ramalpasangan':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#ramalpasangan [kamu|pasangan]*\nContoh : *#ramalpasangan Tobz|XBOT*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#ramalpasangan [kamu|pasangan]*\nContoh : *#ramalpasangan xbot|XBOT*', id)
             arg = body.trim().split('|')
             if (arg.length >= 2) {
-            tobz.reply(from, mess.wait, id)
+            xbot.reply(from, mess.wait, id)
             const kamu = arg[0]
             const pacar = arg[1]
             const rpmn = rate[Math.floor(Math.random() * (rate.length))]
@@ -1515,53 +1675,53 @@ ${desc}`)
             const rpmn5 = rate[Math.floor(Math.random() * (rate.length))]
             const rpmn6 = rate[Math.floor(Math.random() * (rate.length))]
             const rjh2 = `*Hasil Pengamatan!*\nPasangan dengan nama ${kamu} dan ${pacar}\n\n➸ Cinta : ${rpmn}\n➸ Jodoh : ${rpmn2}\n➸ Kemiripan : ${rpmn3}\n➸ Kesukaan : ${rpmn4}\n➸ Kesamaan : ${rpmn5}\n➸ Kebucinan ${rpmn6}`
-            tobz.reply(from, rjh2, id)
+            xbot.reply(from, rjh2, id)
             } else {
-            await tobz.reply(from, 'Wrong Format!', id)
+            await xbot.reply(from, 'Wrong Format!', id)
             }
             break
         case '#artinama':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#artinama [query]*\nContoh : *#artinama Tobz*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#artinama [query]*\nContoh : *#artinama xbot*', id)
             try {
             const resp = await axios.get('https://api.vhtear.com/artinama?nama=' + body.slice(9) + '&apikey=' + vhtearkey)
-            if (resp.data.error) return tobz.reply(from, resp.data.error, id)
+            if (resp.data.error) return xbot.reply(from, resp.data.error, id)
             const anm2 = `➸ Artinama : ${resp.data.result.hasil}`
-            tobz.reply(from, anm2, id)
+            xbot.reply(from, anm2, id)
             } catch (err) {
                 console.error(err.message)
-                await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-                tobz.sendText(ownerNumber, 'Artinama Error : ' + err)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Artinama Error : ' + err)
            }
             break
         case '#fb':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#fb [linkFb]*\nContoh : *#fb https://www.facebook.com/24609282673/posts/10158628585367674/*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#fb [linkFb]*\nContoh : *#fb https://www.facebook.com/24609282673/posts/10158628585367674/*', id)
             try {
-            tobz.reply(from, mess.wait, id)
-            const resp = await axios.get('https://mhankbarbar.herokuapp.com/api/epbe?url=' + body.slice(4) + '&apiKey=' + barbarkey)
+            xbot.reply(from, mess.wait, id)
+            const resp = await axios.get('https://mhankbarbars.herokuapp.com/api/epbe?url=' + body.slice(4) + '&apiKey=' + barbarkey)
             const epbe2 = `*Video Ditemukan!*\n➸ Title : ${resp.data.title}\n➸ Filesize : ${resp.data.filesize}\n➸ Published : ${resp.data.published}`
-            tobz.sendFileFromUrl(from, resp.data.result, `${resp.data.title}.mp4`, epbe2, id)
+            xbot.sendFileFromUrl(from, resp.data.result, `${resp.data.title}.mp4`, epbe2, id)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Video tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Facebook Error : ' + err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Video tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Facebook Error : ' + err)
            }
             break
         case '#tiktok':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#tiktok [linkTiktok]*\nContoh : *#tiktok https://vt.tiktok.com/yqyjPX/*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#tiktok [linkTiktok]*\nContoh : *#tiktok https://vt.tiktok.com/yqyjPX/*', id)
             try {
-            tobz.reply(from, mess.wait, id)
+            xbot.reply(from, mess.wait, id)
             const resp = await axios.get('https://api.vhtear.com/tiktokdl?link=' + body.slice(8) + '&apikey=' + vhtearkey)
             const { dibuat, duration, title, desk, video, image  } = resp.data.result
             const tpk = `*Video Ditemukan!*
@@ -1575,71 +1735,71 @@ Menunggu video...`
             
             const pictk = await bent("buffer")(image)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, title, tpk)
-            tobz.sendFileF(from, video, `${title}.mp4`, '', id)
+            xbot.sendImage(from, base64, title, tpk)
+            xbot.sendFileF(from, video, `${title}.mp4`, '', id)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Video tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Tiktok Error : ' + err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Video tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Tiktok Error : ' + err)
            }
             break
         case '#wiki':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#wiki [query]*\nContoh : *#wiki asu*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#wiki [query]*\nContoh : *#wiki asu*', id)
             const queryz_ = body.slice(6)
-            const wiki = await axios.get(`https://mhankbarbar.herokuapp.com/api/wiki?q=${queryz_}&lang=id&apiKey=${barbarkey}`)
+            const wiki = await axios.get(`https://mhankbarbars.herokuapp.com/api/wiki?q=${queryz_}&lang=id&apiKey=${barbarkey}`)
 
             if (wiki.data.error) {
-                tobz.reply(from, wiki.data.error, id)
+                xbot.reply(from, wiki.data.error, id)
             } else {
-                tobz.sendText(from, `➸ *Query* : ${queryz_}\n\n➸ *Result* : ${wiki.data.result}`, id)
+                xbot.sendText(from, `➸ *Query* : ${queryz_}\n\n➸ *Result* : ${wiki.data.result}`, id)
             }
             break
         case '#kbbi':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#wiki [query]*\nContoh : *#wiki asu*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#wiki [query]*\nContoh : *#wiki asu*', id)
             const kbbl = body.slice(6)
             const kbbl2 = await axios.get(`https://mnazria.herokuapp.com/api/kbbi?search=${kbbl}`)
 
             if (kbbl2.data.error) {
-                tobz.reply(from, kbbl2.data.error, id)
+                xbot.reply(from, kbbl2.data.error, id)
             } else {
-                tobz.sendText(from, `➸ *Query* : ${kbbl}\n\n➸ *Result* : ${kbbl2.data.result}`, id)
+                xbot.sendText(from, `➸ *Query* : ${kbbl}\n\n➸ *Result* : ${kbbl2.data.result}`, id)
             }
             break
         case '#googleimage':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#googleimage [query]*\nContoh : *#googleimage XBOT*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#googleimage [query]*\nContoh : *#googleimage XBOT*', id)
             try{
-                tobz.reply(from, mess.wait, id)
+                xbot.reply(from, mess.wait, id)
                 const gimgg = body.slice(13)
                 const gamb = `https://api.vhtear.com/googleimg?query=${gimgg}&apikey=${vhtearkey}`
                 const gimg = await axios.get(gamb)
                 var gimg2 = Math.floor(Math.random() * gimg.data.result.result_search.length)
                 console.log(gimg2)
-                await tobz.sendFileFromUrl(from, gimg.data.result.result_search[gimg2], `gam.${gimg.data.result.result_search[gimg2]}`, `*Google Image*\n\n*Hasil Pencarian : ${gimgg}*`, id)
+                await xbot.sendFileFromUrl(from, gimg.data.result.result_search[gimg2], `gam.${gimg.data.result.result_search[gimg2]}`, `*Google Image*\n\n*Hasil Pencarian : ${gimgg}*`, id)
             } catch (err) {
                 console.log(err); 
-                tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Gambar tidak ditemukan')
-                tobz.sendText(ownerNumber, 'Google Image Error : ' + err)
+                xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Gambar tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Google Image Error : ' + err)
             }
           break
         case '#smule':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#smule [linkSmule]*\nContoh : *#smule https://www.smule.com/p/767512225_3062360163*', id)
-            tobz.reply(from, mess.wait, id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#smule [linkSmule]*\nContoh : *#smule https://www.smule.com/p/767512225_3062360163*', id)
+            xbot.reply(from, mess.wait, id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1654,20 +1814,20 @@ Menunggu video...`
 ➸ *Judul:* ${title}
 ➸ *Type:* ${Type}`
 
-            tobz.sendImage(from, image, `${title}.jpg`, sml3)
-            tobz.sendFileFromUrl(from, url, `${title}.mp3`, sml3, id)
+            xbot.sendImage(from, image, `${title}.jpg`, sml3)
+            xbot.sendFileFromUrl(from, url, `${title}.mp3`, sml3, id)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Music tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Smule Error : ' + err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Music tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Smule Error : ' + err)
            }
           break
         case '#sandwriting':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1)  return tobz.reply(from, 'Kirim perintah *#sandwriting [ Teks ]*\nContoh *#sandwriting XBOT Cantik*', id)
+            if (args.length === 1)  return xbot.reply(from, 'Kirim perintah *#sandwriting [ Teks ]*\nContoh *#sandwriting XBOT Cantik*', id)
             const swrt = body.slice(13)
             try {
             const swrt2 = await axios.get('https://api.vhtear.com/sand_writing?text1=' + swrt + '&apikey=' + vhtearkey)
@@ -1677,19 +1837,119 @@ Menunggu video...`
 *Text : ${swrt}*`
             const pictk = await bent("buffer")(imgUrl)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, swrt3)
+            xbot.sendImage(from, base64, swrt3)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Sand Writing Error : ' + err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Sand Writing Error : ' + err)
            }
           break
-        case '#resepmasakan':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+        case '#zodiak':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1)  return tobz.reply(from, 'Kirim perintah *#resepmasakan [optional]*\nContoh *#resepmasakan rawon*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#zodiak [zodiak kamu]*\nContoh : *#zodiak scorpio*', id)
+            try {
+            const resp = await axios.get('https://api.vhtear.com/zodiak?query=' + body.slice(8) + '&apikey=' + vhtearkey)
+            if (resp.data.error) return xbot.reply(from, resp.data.error, id)
+            const anm2 = `➸ Zodiak : ${resp.data.result.zodiak}\n➸ Ramalan : ${resp.data.result.ramalan}\n➸ Nomor Keberuntungan : ${resp.data.result.nomorKeberuntungan}\n➸ Motivasi : ${resp.data.result.motivasi}\n➸ Inspirasi : ${resp.data.result.inspirasi}`
+            xbot.reply(from, anm2, id)
+            } catch (err) {
+                console.error(err.message)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Zodiak Error : ' + err)
+           }
+           break
+        case '#caklontong':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)
+            try {
+            const resp = await axios.get('https://api.vhtear.com/funkuis&apikey=' + vhtearkey)
+            if (resp.data.error) return xbot.reply(from, resp.data.error, id)
+            const anm2 = `➸ Soal : ${resp.data.result.soal}\n➸ Jawaban : ${resp.data.result.jawaban}\n➸ Deskripsi : ${resp.data.result.desk}\n➸ Poin : ${resp.data.result.poin}`
+            xbot.reply(from, anm2, id)
+            } catch (err) {
+                console.error(err.message)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Zodiak Error : ' + err)
+           }
+           break
+         case '#family100':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)
+            try {
+            const resp = await axios.get('https://api.vhtear.com/family100&apikey=' + vhtearkey)
+            if (resp.data.error) return xbot.reply(from, resp.data.error, id)
+            const anm2 = `➸ Soal : ${resp.data.result.soal}\n➸ Jawaban : ${resp.data.result.jawaban}`
+            xbot.reply(from, anm2, id)
+            } catch (err) {
+                console.error(err.message)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Family100 Error : ' + err)
+           }
+           break
+        case '#heroml':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#heroml [nama hero]*\nContoh : *#heroml akai*', id)
+            try {
+            const resp = await axios.get('https://api.vhtear.com/herodetail?query=' + body.slice(8) + '&apikey=' + vhtearkey)
+            if (resp.data.error) return xbot.reply(from, resp.data.error, id)
+            const anm2 = `➸ Title : ${resp.data.result.title}\n➸ Quotes : ${resp.data.result.quotes}\n➸ Info : ${resp.data.result.info}\n➸ Atribut : ${resp.data.result.attributes}`
+            xbot.reply(from, anm2, id)
+            } catch (err) {
+                console.error(err.message)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Heroml Error : ' + err)
+           }
+            break
+        case '#nomorhoki':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#nomorhoki [no hp kamu]*\nContoh : *#nomorhoki 0895384009405*', id)
+            try {
+            const resp = await axios.get('https://api.vhtear.com/nomerhoki?no=' + body.slice(11) + '&apikey=' + vhtearkey)
+            if (resp.data.error) return xbot.reply(from, resp.data.error, id)
+            const anm2 = `➸ Hasil :\n ${resp.data.result.hasil}`
+            xbot.reply(from, anm2, id)
+            } catch (err) {
+                console.error(err.message)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Nomorhoki Error : ' + err)
+           }
+            break
+        case '#artimimpi':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#artimimpi [mimpi]*\nContoh : *#artinama ular*', id)
+            try {
+            const resp = await axios.get('https://api.vhtear.com/artimimpi?query=' + body.slice(10) + '&apikey=' + vhtearkey)
+            if (resp.data.error) return xbot.reply(from, resp.data.error, id)
+            const anm2 = `➸ Artimimpi : ${resp.data.result.hasil}`
+            xbot.reply(from, anm2, id)
+            } catch (err) {
+                console.error(err.message)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Artimimpi Error : ' + err)
+           }
+            break
+        case '#resepmasakan':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)
+            if (args.length === 1)  return xbot.reply(from, 'Kirim perintah *#resepmasakan [optional]*\nContoh *#resepmasakan rawon*', id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1706,20 +1966,20 @@ Menunggu video...`
 
             const pictk = await bent("buffer")(image)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, title, rmk3)
+            xbot.sendImage(from, base64, title, rmk3)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Resep tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Resepmasakan Error : ' + err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Resep tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Resepmasakan Error : ' + err)
            }
            break
         case '#twitterstalk':
         case '#twtstalk':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1)  return tobz.reply(from, 'Kirim perintah *#twtstalk @username*\nContoh *#twtstalk @miakhalifah*', id)
+            if (args.length === 1)  return xbot.reply(from, 'Kirim perintah *#twtstalk @username*\nContoh *#twtstalk @miakhalifah*', id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1727,7 +1987,7 @@ Menunggu video...`
             const twstalk = await slicedArgs.join(' ')
             console.log(twstalk)
             try {
-            const twstalk2 = await axios.get('https://mhankbarbar.herokuapp.com/api/twstalk?username=' + twstalk + '&apiKey=' + barbarkey)
+            const twstalk2 = await axios.get('https://mhankbarbars.herokuapp.com/api/twstalk?username=' + twstalk + '&apiKey=' + barbarkey)
             const { followers_count, full_name, name, profile_pic, status_count } = twstalk2.data
             const twstalk3 = `*User Ditemukan!*
 ➸ *Nama:* ${name}
@@ -1737,19 +1997,19 @@ Menunggu video...`
 
             const pictk = await bent("buffer")(profile_pic)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, name, twstalk3)
+            xbot.sendImage(from, base64, name, twstalk3)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Twitter Error : ' + err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Twitter Error : ' + err)
            }
           break
         case '#igstalk':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1)  return tobz.reply(from, 'Kirim perintah *#igstalk @username*\nContoh *#igstalk duar_amjay*', id)
+            if (args.length === 1)  return xbot.reply(from, 'Kirim perintah *#igstalk @username*\nContoh *#igstalk duar_amjay*', id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1769,19 +2029,19 @@ Menunggu video...`
 
             const pictk = await bent("buffer")(picture)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, username, istalk3)
+            xbot.sendImage(from, base64, username, istalk3)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Igstalk Error : ' + err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Igstalk Error : ' + err)
            }
           break
         case '#tiktokstalk':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1)  return tobz.reply(from, 'Kirim perintah *#tiktokstalk @username*\nContoh *#tiktokstalk @duar_amjay*', id)
+            if (args.length === 1)  return xbot.reply(from, 'Kirim perintah *#tiktokstalk @username*\nContoh *#tiktokstalk @duar_amjay*', id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1804,19 +2064,19 @@ Menunggu video...`
 
             const pictk = await bent("buffer")(picture)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, title, tiktod)
+            xbot.sendImage(from, base64, title, tiktod)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Error Tiktokstalk : '+ err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Error Tiktokstalk : '+ err)
            }
           break
         case '#smulestalk':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#smulestalk [@username]*\nContoh : *#smulestalk loli*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#smulestalk [@username]*\nContoh : *#smulestalk loli*', id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1837,51 +2097,64 @@ Menunggu video...`
 
             const pictk = await bent("buffer")(picture)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, title, smule)
+            xbot.sendImage(from, base64, title, smule)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Error Smulestalk : '+ err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Error Smulestalk : '+ err)
             }
           break
-        case '#':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isSimi) return tobz.reply(from, 'command/Perintah Simi belum di aktifkan di group ini!', id)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *# [teks]*\nContoh : *# halo*')
-            const que = body.slice(2)
-            const sigo = await axios.get(`http://simsumi.herokuapp.com/api?text=${que}&lang=id`)
-            const sigot = sigo.data
-            tobz.reply(from, sigot.success, id)
-            console.log(sigot)
-            break
-        case '#ig': 
+         case '#tebakgambar':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)
+            try {
+            const resp = await axios.get('https://api.vhtear.com/tebakgambar&apikey=' + vhtearkey)
+            if (resp.data.error) return xbot.reply(from, resp.data.error, id)
+            const jwban = `➸ Jawaban : ${resp.data.result.jawaban}`
+            xbot.sendFileFromUrl(from, resp.data.result.soalImg, 'tebakgambar.jpg', '_Silahkan Jawab Maksud Dari Gambar Ini_', id)
+            xbot.sendText(from, `30 Detik Lagi...`, id)
+            await sleep(10000)
+            xbot.sendText(from, `20 Detik Lagi...`, id)
+            await sleep(10000)
+            xbot.sendText(from, `10 Detik Lagi...`, id)
+            await sleep(10000)
+            xbot.reply(from, jwban, id)
+            } catch (err) {
+                console.error(err.message)
+                await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Soal Quiz tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Tebak Gambar Error : ' + err)
+           }
+           break
+    case '#ig': 
         case '#instagram':
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length === 1) return tobz.reply(from, `Kirim perintah *#ig [ Link Instagram ]* untuk contoh silahkan kirim perintah *#readme*`)
-            if (!args[1].match(isUrl) && !args[1].includes('instagram.com')) return tobz.reply(from, `Maaf, link yang kamu kirim tidak valid. [Invalid Link]`, id)
-            await tobz.reply(from, mess.wait, id);
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#ig [ Link Instagram ]* untuk contoh silahkan kirim perintah *#readme*`)
+            if (!args[1].match(isUrl) && !args[1].includes('instagram.com')) return xbot.reply(from, `Maaf, link yang kamu kirim tidak valid. [Invalid Link]`, id)
+            await xbot.reply(from, mess.wait, id);
             instagram(args[1]).then(async(res) => {
                 let username = res.owner_username;
                 for (let i = 0; i < res.post.length; i++) {
                 if (res.post[i].type == "image") {
-                        await tobz.sendFileFromUrl(from, res.post[i].urlDownload, "ig.jpg", `*「 INSTAGRAM 」*\n\n➸ *Username* : ${username}\n➸ *Tipe* : Image/Jpg`, id);
+                        await xbot.sendFileFromUrl(from, res.post[i].urlDownload, "ig.jpg", `*「 INSTAGRAM 」*\n\n➸ *Username* : ${username}\n➸ *Tipe* : Image/Jpg`, id);
                         limitAdd(serial)
                     } else if (res.post[i].type == "video") {
-                        await tobz.sendFileFromUrl(from, res.post[i].urlDownload, "ig.mp4", `*「 INSTAGRAM 」*\n\n➸ *Username* : ${username}\n➸ *Tipe* : Video/MP4`);
+                        await xbot.sendFileFromUrl(from, res.post[i].urlDownload, "ig.mp4", `*「 INSTAGRAM 」*\n\n➸ *Username* : ${username}\n➸ *Tipe* : Video/MP4`);
                         limitAdd(serial)
                     }
                 }
             }).catch((err) => {
                 console.log(err);
-                tobz.reply(from, `Maaf, Terjadi Kesalahan`, id)
+                xbot.reply(from, `Maaf, Terjadi Kesalahan`, id)
             })
             break       
         case '#starmaker':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#starmaker [linkStarmaker]* untuk contoh silahkan kirim perintah *#readme*')
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#starmaker [linkStarmaker]* untuk contoh silahkan kirim perintah *#readme*')
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1898,20 +2171,20 @@ Menunggu video...`
 
             const pictk = await bent("buffer")(image)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, 'image.jpg', 'nihh mhank')
-            tobz.sendFileFromUrl(from, url, `${title}.mp4`, '', id)
+            xbot.sendImage(from, base64, 'image.jpg', 'nihh mhank')
+            xbot.sendFileFromUrl(from, url, `${title}.mp4`, '', id)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Error Starmaker : '+ err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Error Starmaker : '+ err)
            }
           break
         case '#maps':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#maps [optional]*, Contoh : *#maps Jakarta*')
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#maps [optional]*, Contoh : *#maps Jakarta*')
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1923,20 +2196,20 @@ Menunggu video...`
             const { gambar } = mapz2.data
             const pictk = await bent("buffer")(gambar)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, 'maps.jpg', `*Hasil Maps : ${mapz}*`)
+            xbot.sendImage(from, base64, 'maps.jpg', `*Hasil Maps : ${mapz}*`)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Error Maps : '+ err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Error Maps : '+ err)
            }
           break
         case '#twitter':
-            if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+           // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#twitter [linkTwitter]* untuk contoh silahkan kirim perintah *#readme*')
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#twitter [linkTwitter]* untuk contoh silahkan kirim perintah *#readme*')
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1944,7 +2217,7 @@ Menunggu video...`
             const twtdl = await slicedArgs.join(' ')
             console.log(twtdl)
             try {
-            const twtdl2 = await axios.get('https://mhankbarbar.herokuapp.com/api/twit?url=' + twtdl + '&apiKey=' + barbarkey)
+            const twtdl2 = await axios.get('https://mhankbarbars.herokuapp.com/api/twit?url=' + twtdl + '&apiKey=' + barbarkey)
             const { filesize, quote, result, title } = twtdl2.data
             const twtdl3 = `*User Ditemukan!*
 
@@ -1952,19 +2225,19 @@ Menunggu video...`
 ➸ *Deskripsi:* ${quote}
 ➸ *Filesize:* ${filesize}`
 
-            tobz.sendFileFromUrl(from, result, `${title}.mp4`, twtdl3, id)
+            xbot.sendFileFromUrl(from, result, `${title}.mp4`, twtdl3, id)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
            }
           break
         case '#joox':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#play [optional]*\nContoh : *#joox Alan Walker*', id)
-            tobz.reply(from, mess.wait, id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#play [optional]*\nContoh : *#joox Alan Walker*', id)
+            xbot.reply(from, mess.wait, id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -1985,21 +2258,33 @@ Menunggu video...`
 
             const pictk = await bent("buffer")(linkImg)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, judul, musik)
-            tobz.sendFileFromUrl(from, linkMp3, `${judul}.mp3`, '', id)
+            xbot.sendImage(from, base64, judul, musik)
+            xbot.sendFileFromUrl(from, linkMp3, `${judul}.mp3`, '', id)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Error Joox : '+ err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Error Joox : '+ err)
            }
           break
-        case '#checkip':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+        case '#asupan': 
+          if (isGroupMsg) return xbot.reply(from, 'Khusus di grup ya bosku wkwk', id)
+            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis/nJika Ingin Isi Ulang Chat Owner!/nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#checkip [ipaddress]*\nContoh : *#checkip 182.0.144.145*', id)
             tobz.reply(from, mess.wait, id)
+            const ditai = fs.readFileSync('./lib/asupan.json')
+            const ditaiJsin = JSON.parse(ditai)
+            const rindIndixa = Math.floor(Math.random() * ditaiJsin.length)
+            const rindKiya = ditaiJsin[rindIndixa]
+            tobz.sendFileFromUrl(from, rindKiya, 'asupan.mp4', 'Nih', id)
+            break 
+        case '#checkip':
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#checkip [ipaddress]*\nContoh : *#checkip 182.0.144.145*', id)
+            xbot.reply(from, mess.wait, id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
             var slicedArgs = Array.prototype.slice.call(arg, 1);
@@ -2024,20 +2309,20 @@ Menunggu video...`
 
             const pictk = await bent("buffer")(location.country_flag)
             const base64 = `data:image/jpg;base64,${pictk.toString("base64")}`
-            tobz.sendImage(from, base64, city, cekip3)
+            xbot.sendImage(from, base64, city, cekip3)
             } catch (err) {
              console.error(err.message)
-             await tobz.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
-             tobz.sendText(ownerNumber, 'Error Check IP : '+ err)
+             await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, User tidak ditemukan')
+             xbot.sendText(ownerNumber, 'Error Check IP : '+ err)
            }
           break
         /*case '#nhentai':
         case '#nh':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isNsfw) return tobz.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isNsfw) return xbot.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
             if (args.length === 2) {
                 const nuklir = body.split(' ')[1]
-                tobz.reply(from, mess.wait, id)
+                xbot.reply(from, mess.wait, id)
                 const cek = await nhentai.exists(nuklir)
                 if (cek === true)  {
                     try {
@@ -2050,9 +2335,9 @@ Menunggu video...`
                         const { parodies, tags, artists, groups, languages, categories } = await details
                         var teks = `*Title* : ${title}\n\n*Parodies* : ${parodies}\n\n*Tags* : ${tags.join(', ')}\n\n*Artists* : ${artists.join(', ')}\n\n*Groups* : ${groups.join(', ')}\n\n*Languages* : ${languages.join(', ')}\n\n*Categories* : ${categories}\n\n*Link* : ${link}`
                         exec('nhentai --id=' + nuklir + ` -P mantap.pdf -o ./hentong/${nuklir}.pdf --format `+ `${nuklir}.pdf`, (error, stdout, stderr) => {
-                            tobz.sendFileFromUrl(from, pic, 'hentod.jpg', teks, id).then(() => 
-                            tobz.sendFile(from, `./hentong/${nuklir}.pdf/${nuklir}.pdf.pdf`, `${title}.pdf`, '', id)).catch(() => 
-                            tobz.sendFile(from, `./hentong/${nuklir}.pdf/${nuklir}.pdf.pdf`, `${title}.pdf`, '', id))
+                            xbot.sendFileFromUrl(from, pic, 'hentod.jpg', teks, id).then(() => 
+                            xbot.sendFile(from, `./hentong/${nuklir}.pdf/${nuklir}.pdf.pdf`, `${title}.pdf`, '', id)).catch(() => 
+                            xbot.sendFile(from, `./hentong/${nuklir}.pdf/${nuklir}.pdf.pdf`, `${title}.pdf`, '', id))
                             if (error) {
                                 console.log('error : '+ error.message)
                                 return
@@ -2064,55 +2349,55 @@ Menunggu video...`
                             console.log('stdout : '+ stdout)
                             })
                     } catch (err) {
-                        tobz.reply(from, '[❗] Terjadi kesalahan, mungkin kode nuklir salah', id)
+                        xbot.reply(from, '[❗] Terjadi kesalahan, mungkin kode nuklir salah', id)
                     }
                 } else {
-                    tobz.reply(from, '[❗] Kode nuklir Salah!')
+                    xbot.reply(from, '[❗] Kode nuklir Salah!')
                 }
             } else {
-                tobz.reply(from, '[ WRONG ] Kirim perintah *#nhentai [kode]* untuk contoh kirim perintah *#readme*')
+                xbot.reply(from, '[ WRONG ] Kirim perintah *#nhentai [kode]* untuk contoh kirim perintah *#readme*')
             }
             break*/
         case '#brainly':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             if (args.length >= 2){
                 const BrainlySearch = require('./lib/brainly')
                 let tanya = body.slice(9)
                 let jum = Number(tanya.split('.')[1]) || 2
-                if (jum > 10) return tobz.reply(from, 'Max 10!', id)
+                if (jum > 10) return xbot.reply(from, 'Max 10!', id)
                 if (Number(tanya[tanya.length-1])){
                     tanya
                 }
-                tobz.reply(from, `➸ *Pertanyaan* : ${tanya.split('.')[0]}\n\n➸ *Jumlah jawaban* : ${Number(jum)}`, id)
+                xbot.reply(from, `➸ *Pertanyaan* : ${tanya.split('.')[0]}\n\n➸ *Jumlah jawaban* : ${Number(jum)}`, id)
                 await BrainlySearch(tanya.split('.')[0],Number(jum), function(res){
                     res.forEach(x=>{
                         if (x.jawaban.fotoJawaban.length == 0) {
-                            tobz.reply(from, `➸ *Pertanyaan* : ${x.pertanyaan}\n\n➸ *Jawaban* : ${x.jawaban.judulJawaban}\n`, id)
+                            xbot.reply(from, `➸ *Pertanyaan* : ${x.pertanyaan}\n\n➸ *Jawaban* : ${x.jawaban.judulJawaban}\n`, id)
                         } else {
-                            tobz.reply(from, `➸ *Pertanyaan* : ${x.pertanyaan}\n\n➸ *Jawaban* 〙: ${x.jawaban.judulJawaban}\n\n➸ *Link foto jawaban* : ${x.jawaban.fotoJawaban.join('\n')}`, id)
+                            xbot.reply(from, `➸ *Pertanyaan* : ${x.pertanyaan}\n\n➸ *Jawaban* 〙: ${x.jawaban.judulJawaban}\n\n➸ *Link foto jawaban* : ${x.jawaban.fotoJawaban.join('\n')}`, id)
                         }
                     })
                 })
             } else {
-                tobz.reply(from, 'Usage :\n!brainly [pertanyaan] [.jumlah]\n\nEx : \n!brainly NKRI .2', id)
+                xbot.reply(from, 'Usage :\n!brainly [pertanyaan] [.jumlah]\n\nEx : \n!brainly NKRI .2', id)
             }
             break
         case '#math':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (args.length === 1) return tobz.reply(from, '[❗] Kirim perintah *#math [ Angka ]*\nContoh : #math 12*12\n*NOTE* :\n- Untuk Perkalian Menggunakan *\n- Untuk Pertambahan Menggunakan +\n- Untuk Pengurangan Mennggunakan -\n- Untuk Pembagian Menggunakan /')
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (args.length === 1) return xbot.reply(from, '[❗] Kirim perintah *#math [ Angka ]*\nContoh : #math 12*12\n*NOTE* :\n- Untuk Perkalian Menggunakan *\n- Untuk Pertambahan Menggunakan +\n- Untuk Pengurangan Mennggunakan -\n- Untuk Pembagian Menggunakan /')
             const mtk = body.slice(6)
             if (typeof Math_js.evaluate(mtk) !== "number") {
-            tobz.reply(from, `"${mtk}", bukan angka!\n[❗] Kirim perintah *#math [ Angka ]*\nContoh : #math 12*12\n*NOTE* :\n- Untuk Perkalian Menggunakan *\n- Untuk Pertambahan Menggunakan +\n- Untuk Pengurangan Mennggunakan -\n- Untuk Pembagian Menggunakan /`, id)
+            xbot.reply(from, `"${mtk}", bukan angka!\n[❗] Kirim perintah *#math [ Angka ]*\nContoh : #math 12*12\n*NOTE* :\n- Untuk Perkalian Menggunakan *\n- Untuk Pertambahan Menggunakan +\n- Untuk Pengurangan Mennggunakan -\n- Untuk Pembagian Menggunakan /`, id)
         } else {
-            tobz.reply(from, `*「 MATH 」*\n\n*Kalkulator*\n${mtk} = ${Math_js.evaluate(mtk)}`, id)
+            xbot.reply(from, `*「 MATH 」*\n\n*Kalkulator*\n${mtk} = ${Math_js.evaluate(mtk)}`, id)
         }
         break
         case '#wait':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             if (isMedia && type === 'image' || quotedMsg && quotedMsg.type === 'image') {
@@ -2123,7 +2408,7 @@ Menunggu video...`
                 }
                 const fetch = require('node-fetch')
                 const imgBS4 = `data:${mimetype};base64,${mediaData.toString('base64')}`
-                tobz.reply(from, 'Searching....', id)
+                xbot.reply(from, 'Searching....', id)
                 fetch('https://trace.moe/api/search', {
                     method: 'POST',
                     body: JSON.stringify({ image: imgBS4 }),
@@ -2132,7 +2417,7 @@ Menunggu video...`
                 .then(respon => respon.json())
                 .then(resolt => {
                     if (resolt.docs && resolt.docs.length <= 0) {
-                        tobz.reply(from, 'Maaf, saya tidak tau ini anime apa', id)
+                        xbot.reply(from, 'Maaf, saya tidak tau ini anime apa', id)
                     }
                     const { is_adult, title, title_chinese, title_romaji, title_english, episode, similarity, filename, at, tokenthumb, anilist_id } = resolt.docs[0]
                     teks = ''
@@ -2144,24 +2429,24 @@ Menunggu video...`
                     teks += `➸ *Eps* : ${episode.toString()}\n`
                     teks += `➸ *Kesamaan* : ${(similarity * 100).toFixed(1)}%\n`
                     var video = `https://media.trace.moe/video/${anilist_id}/${encodeURIComponent(filename)}?t=${at}&token=${tokenthumb}`;
-                    tobz.sendFileFromUrl(from, video, 'nimek.mp4', teks, id).catch(() => {
-                        tobz.reply(from, teks, id)
+                    xbot.sendFileFromUrl(from, video, 'nimek.mp4', teks, id).catch(() => {
+                        xbot.reply(from, teks, id)
                     })
                 })
                 .catch(() => {
-                    tobz.reply(from, 'Error !', id)
+                    xbot.reply(from, 'Error !', id)
                 })
             } else {
-                tobz.sendFileFromUrl(from, tutor, 'Tutor.jpg', 'Neh contoh mhank!', id)
+                xbot.sendFileFromUrl(from, tutor, 'Tutor.jpg', 'Neh contoh mhank!', id)
             }
             break
         case '#textmaker':
-                if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-                if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+                if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+                if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
                 await limitAdd(serial)
                 arg = body.trim().split('|')
-                tobz.reply(from, '[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!', id)
+                xbot.reply(from, '[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!', id)
                 if ((isMedia || isQuotedImage) && arg.length >= 2) {
                 const top = arg[1]
                 const bott = arg[2]
@@ -2169,214 +2454,390 @@ Menunggu video...`
                 const mediaData = await decryptMedia(encryptMedia, uaOverride)
                 const getUrl = await uploadImages(mediaData, false)
                 const ImageBase64 = await custom(getUrl, top, bott)
-                await tobz.sendFile(from, ImageBase64, 'image.png','neh...')
+                await xbot.sendFile(from, ImageBase64, 'image.png','neh...')
                 } else {
-                await tobz.reply(from, 'Wrong Format!', id)
+                await xbot.reply(from, 'Wrong Format!', id)
                 }
                 break
        case '#tahta':
        case '#harta':
-            if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
-             tobz.reply(from, mess.wait, id)
-             const ttahta = body.slice(7)
-             if (!ttahta) return tobz.reply(from, 'Masukin nama mu beb!\nMax 8 huruf biar bagus!', id)
-             if (ttahta.length > 8) return tobz.reply(from, 'Hurufnya terlalu panjang sayang😔', id)
-             await tobz.sendFileFromUrl(from, `https://api.vhtear.com/hartatahta?text=${ttahta}&apikey=${vhtearkey}`, `harta-tahta-${ttahta}.jpg`, `*Harta*\n*Tahta*\n*${ttahta}*`, id)
+           // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+             xbot.reply(from, mess.wait, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            await limitAdd(serial)        
+             const ttahta = body.slice(8)
+             if (!ttahta) return xbot.reply(from, 'Masukin nama mu beb!\nMax 8 huruf biar bagus!', id)
+             if (ttahta.length > 8) return xbot.reply(from, 'Hurufnya terlalu panjang sayang😔', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/hartatahta?text=${ttahta}&apikey=${vhtearkey}`, `harta-tahta-${ttahta}.jpg`, `*Harta*\n*Tahta*\n*${ttahta}*`, id)
              limitAdd(serial)
                 break
-       case '#blackpink':
        case '#bpink':
-             if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
-             tobz.reply(from, mess.wait, id)
+           // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+             xbot.reply(from, mess.wait, id)
              const bpink = body.slice(7)
-             if (!bpink) return tobz.reply(from, 'Masukin nama mu beb!\nMax 8 huruf biar bagus!', id)
-             if (bpink.length > 8) return tobz.reply(from, 'Hurufnya terlalu panjang sayang😔', id)
-             await tobz.sendFileFromUrl(from, `https://api.vhtear.com/blackpinkicon?text=${bpink}&apikey=${vhtearkey}`, `blackpink-${bpink}.jpg`, `*☑️ Logo Blackpink ${bpink}*`, id)
+             if (!bpink) return xbot.reply(from, 'Masukin nama mu beb!\nMax 8 huruf biar bagus!', id)
+             if (bpink.length > 8) return xbot.reply(from, 'Hurufnya terlalu panjang sayang😔', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/blackpinkicon?text=${bpink}&apikey=${vhtearkey}`, `blackpink-${bpink}.jpg`, `*☑️ Logo Blackpink ${bpink}*`, id)
              limitAdd(serial)
                 break
-       case '#thunder':
-            if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
-             tobz.reply(from, mess.wait, id)
-             const tthunder = body.slice(7)
-             if (!tthunder) return tobz.reply(from, 'Masukin nama mu beb!\nMax 8 huruf biar bagus!', id)
-             if (tthunder.length > 8) return tobz.reply(from, 'Hurufnya terlalu panjang sayang😔', id)
-             await tobz.sendFileFromUrl(from, `https://api.vhtear.com/thundertext?text=${tthunder}&apikey=${vhtearkey}`, `thunder-logo-${tthunder}.jpg`, `*☑️ Logo Thunderex ${tthunder}*`, id)
+  /*     case '#thunder':
+           // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+             xbot.reply(from, mess.wait, id)
+             const tthunder = body.slice()
+             if (!tthunder) return xbot.reply(from, 'Masukin nama mu beb!\nMax 8 huruf biar bagus!', id)
+             if (tthunder.length > 8) return xbot.reply(from, 'Hurufnya terlalu panjang sayang😔', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/thundertext?text=${tthunder}&apikey=${vhtearkey}`, `thunder-logo-${tthunder}.jpg`, `*☑️ Logo Thunderex ${tthunder}*`, id)
              limitAdd(serial)
-                break
+                break*/
+        case `#slidteks`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return
+              ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis/nJika Ingin Isi Ulang Chat Owner!/nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+    
+            await limitAdd(serial)
+             const sleding = body.slice(8)
+             if (!sleding) return xbot.reply(from, 'Kirim perintah *!slidingtext [teks]*\n\nContoh *!slidingtext ah mantap*', id)
+             xbot.sendText(from, '_Sedang diproses, mohon tunggu sebentar!..._', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/slidingtext?text=${sleding}&apikey=${vhtearkey}`,`${sleding}.mp4`,`slidingtext ${sleding}`, id)        
+             break 
+        case `#searchteks`: 
+         case `#googleteks`:
+            ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)       
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis/nJika Ingin Isi Ulang Chat Owner!/nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#searchteks [ |Teks1|Teks2|teks3 ]*, contoh *#searchteks |XBOT|Gans|Banget*`, id)
+            argz = body.trim().split('|')
+            if (argz.length >= 3) {
+                xbot.reply(from, mess.wait, id)
+                const missing = argz[1]
+                const missing2 = argz[2]
+                const missing3 = argz[3]
+                if (missing.length > 8) return xbot.reply(from, '*Teks1 Terlalu Panjang!*\n_Maksimal 8 huruf!_', id)
+                if (missing2.length > 8) return xbot.reply(from, '*Teks2 Terlalu Panjang!*\n_Maksimal 8 huruf!_', id)
+                if (missing3.length > 8) return xbot.reply(from, '*Teks2 Terlalu Panjang!*\n_Maksimal 8 huruf!_', id)    
+                xbot.sendFileFromUrl(from, `https://api.vhtear.com/googletext?text1=${missing}&text2=${missing2}&text3=${missing3}&apikey=${vhtearkey}`)
+                await limitAdd(serial)
+            } else {
+                await xbot.reply(from, `Wrong Format!\n[❗] Kirim perintah *.googleteks [ |Teks1|Teks2|Teks3 ]*, contoh *.googleteks |XBOT|Bot|Ganteng*`, id)
+            }
+            break  
+         case `#partytext`:
+         case `#partyteks`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return         
+            ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)
+             //if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+             if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis!*\nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+    
+             await limitAdd(serial)
+             const partytext = body.slice(10)
+             if (!partytext) return xbot.reply(from, 'Kirim perintah *#partyteks [teks]*\n\nContoh *#partyteks XBOT*', id)
+             //xbot.sendText(from, '*Sedang di proses*...', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/partytext?text=${partytext}&apikey=${vhtearkey}`,`${partytext}.jpg`,`────────────────\n*Di Buat pada* : \n *${moment().format('DD/MM/YY HH:mm:ss')}*\n────────────────\n _*By XBOT*_`, id)        
+             break  
+         case `#romancetext`:
+         case `#romanceteks`:
+            ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)
+             //if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+             if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis!*\nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+    
+             await limitAdd(serial)
+             const romancetext = body.slice(12)
+             if (!romancetext) return xbot.reply(from, 'Kirim perintah *#romanceteks [teks]*\n\nContoh *#romanceteks XBOT*', id)
+             //xbot.sendText(from, '*Sedang di proses*...', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/romancetext?text=${romancetext}&apikey=${vhtearkey}`,`${romancetext}.jpg`,`────────────────\n*Di Buat pada* : \n *${moment().format('DD/MM/YY HH:mm:ss')}*\n────────────────\n _*By XBOT*_`, id)        
+             break   
+         case `#teksmaker`:
+         case `#textmaker`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return         
+            ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)
+             //if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+             if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis!*\nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+    
+             await limitAdd(serial)
+             const teksmaker1 = body.slice(10)
+             if (!teksmaker1) return xbot.reply(from, 'Kirim perintah *#teksmaker1 [teks]*\n\nContoh *#teksmaker1 XBOT*', id)
+             //xbot.sendText(from, '*Sedang di proses*...', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/textmaker?text=${teksmaker1}&warna=green&apikey=${vhtearkey}`,`${teksmaker1}.jpg`,`────────────────\n*Di Buat pada* : \n *${moment().format('DD/MM/YY HH:mm:ss')}*\n────────────────\n _*By XBOT*_`, id)        
+             break      
+         case `#lovemaker`:
+         case `#textlove`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return         
+            ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)
+             //if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+             if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis!*\nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+    
+             await limitAdd(serial)
+             const love = body.slice(11)
+             if (!love) return xbot.reply(from, 'Kirim perintah *#lovemaker [teks]*\n\nContoh *#lovemaker XBOT*', id)
+             //xbot.sendText(from, '*Sedang di proses*...', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/lovemessagetext?text=${love}&apikey=${vhtearkey}`,`${love}.jpg`,`────────────────\n*Di Buat pada* : \n *${moment().format('DD/MM/YY HH:mm:ss')}*\n────────────────\n _*By XBOT*_`, id)        
+             break      
+         case `#glowmaker`:
+         case `#textglow`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return         
+            ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)
+             //if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+             if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis!*\nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+    
+             await limitAdd(serial)
+             const glow = body.slice(10)
+             if (!glow) return xbot.reply(from, 'Kirim perintah *#glowmaker [teks]*\n\nContoh *#glowmaker XBOT*', id)
+             //xbot.sendText(from, '*Sedang di proses*...', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/glowtext?text=${glow}&apikey=${vhtearkey}`,`${glow}.jpg`,`────────────────\n*Di Buat pada* : \n *${moment().format('DD/MM/YY HH:mm:ss')}*\n────────────────\n _*By XBOT*_`, id)        
+             break             
+        case `#glitchtext`: 
+        case `#glitchteks`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return         
+            //if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)       
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis/nJika Ingin Isi Ulang Chat Owner!/nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#glitchteks  |Teks1|Teks2*, contoh *#glitchteks  |Teks1|Teks2*`, id)
+            argz = body.trim().split('|')
+            if (argz.length >= 3) {
+                xbot.reply(from, mess.wait, id)
+                const glitch1 = argz[1]
+                const glitch2 = argz[2]
+                if (glitch1.length > 8) return xbot.reply(from, '*Teks1 Terlalu Panjang!*\n_Maksimal 8 huruf!_', id)
+                if (glitch2.length > 8) return xbot.reply(from, '*Teks2 Terlalu Panjang!*\n_Maksimal 8 huruf!_', id) 
+                xbot.sendFileFromUrl(from, `https://api.vhtear.com/glitchtext?text1=${glitch1}&text2=${glitch2}}&apikey=${vhtearkey}`)
+                await limitAdd(serial)
+            } else {
+                await xbot.reply(from, `Wrong Format!\n[❗] Kirim perintah *#glitchteks  |Teks1|Teks2*, contoh *#glitchteks |XBOT|Bot*`, id)
+            }
+            break   
+        case `#valentinetext`: 
+        case `#valentinemaker`:
+        case `#valenmaker`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return         
+            ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)       
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis/nJika Ingin Isi Ulang Chat Owner!/nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#valentinemaker  |Teks1|Teks2*, contoh *#valentinemaker  |Teks1|Teks2*`, id)
+            argz = body.trim().split('|')
+            if (argz.length >= 3) {
+                xbot.reply(from, mess.wait, id)
+                const valent1 = argz[1]
+                const valent2 = argz[2]
+                if (valent1.length > 8) return xbot.reply(from, '*Teks1 Terlalu Panjang!*\n_Maksimal 8 huruf!_', id)
+                if (valent2.length > 8) return xbot.reply(from, '*Teks2 Terlalu Panjang!*\n_Maksimal 8 huruf!_', id) 
+                xbot.sendFileFromUrl(from, `https://api.vhtear.com/valentine?t1=${valent1}&t2=${valent2}&l1=https://obs-sg.line-apps.com/os/p/u3ef45bfb65e4c101f9126ea9b5d3b1e5&l2=https://obs-sg.line-apps.com/os/p/ue69deccc9ec05714297bc08184f75a15&apikey=${vhtearkey}`)
+                await limitAdd(serial)
+            } else {
+                await xbot.reply(from, `Wrong Format!\n[❗] Kirim perintah *#valentinemaker  |Teks1|Teks2*, contoh *#valentinemaker |XBOT|Bot*`, id)
+            }
+            break                                                                          
+        case `#fssarah`:
+        case `#fsviloid`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return        
+              ////if (!IsPremium) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis/nJika Ingin Isi Ulang Chat Owner!/nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            
+            await limitAdd(serial)         
+             xbot.reply(from, mess.wait, id)
+             const srhe = body.slice(10)
+             if (!srhe) return xbot.reply(from, 'Masukan nama!\nMax 8 huruf biar bagus!', id)
+             await xbot.sendFileFromUrl(from, `https://rest.farzain.com/api/special/fansign/indo/viloid.php?apikey=ppqeuy&text=${srhe}`, `tytyd.jpg`, `nih..`, id)
+             limitAdd(serial)
+                break     
         case '#quotemaker':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             arg = body.trim().split('|')
             if (arg.length >= 4) {
-                tobz.reply(from, mess.wait, id)
+                xbot.reply(from, mess.wait, id)
                 const quotes = arg[1]
                 const author = arg[2]
                 const theme = arg[3]
                 await quotemaker(quotes, author, theme).then(amsu => {
-                    tobz.sendFile(from, amsu, 'quotesmaker.jpg','neh...').catch(() => {
-                       tobz.reply(from, mess.error.Qm, id)
+                    xbot.sendFile(from, amsu, 'quotesmaker.jpg','neh...').catch(() => {
+                       xbot.reply(from, mess.error.Qm, id)
                     })
                 })
             } else {
-                tobz.reply(from, 'Usage: \n#quotemaker |teks|watermark|theme\n\nEx :\n#quotemaker |ini contoh|bicit|random', id)
+                xbot.reply(from, 'Usage: \n#quotemaker |teks|watermark|theme\n\nEx :\n#quotemaker |ini contoh|bicit|random', id)
+            }
+            break
+case `#nyimak`:
+            //if(isReg(obj)) return
+            //if(cekumur(cekage)) return        
+            //if (!isOwner) return xbot.reply(from, 'Perintah Hanya bisa digunakan oleh Owner!', id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)                
+            if (!quotedMsg) return xbot.reply(from, `Tolong Reply Pesan Bot`, id)
+            if (!quotedMsgObj.fromMe) return xbot.reply(from, `Tolong Reply Pesan Bot`, id)
+            try {
+                const reader = await xbot.getMessageReaders(quotedMsgObj.id)
+                let list = ''
+                for (let pembaca of reader) {
+                list += `- @${pembaca.id.replace(/@c.us/g, '')}\n` 
+            }
+                xbot.sendTextWithMentions(from, `Ciee, Ngeread...\n${list}`)
+            } catch(err) {
+                console.log(err)
+                xbot.reply(from, `Maaf, Belum Ada Yang Membaca Pesan Bot atau Mereka Menonaktifkan Read Receipts`, id)    
             }
             break
         case '#listchannel':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            tobz.reply(from, listChannel, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            xbot.reply(from, listChannel, id)
             break
         case '#jadwaltv':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#jadwalTv [channel]*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#jadwalTv [channel]*', id)
             const query = body.slice(10).toLowerCase()
             const jadwal = await jadwalTv(query)
-            tobz.reply(from, jadwal, id)
+            xbot.reply(from, jadwal, id)
             break
         case '#jadwaltvnow':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const jadwalNow = await axios.get('https://api.haipbis.xyz/jadwaltvnow')
-            tobz.reply(from, `Jam : ${jadwalNow.data.jam}\n\nJadwalTV : ${jadwalNow.data.jadwalTV}`, id)
+            xbot.reply(from, `Jam : ${jadwalNow.data.jam}\n\nJadwalTV : ${jadwalNow.data.jadwalTV}`, id)
             break
         case '#nulis':
-            if (!isPremium) return tobz.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+           // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#nulis [teks]*, contoh *#nulis aku bukan boneka*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#nulis [teks]*, contoh *#nulis aku bukan boneka*', id)
             const ngettik = body.slice(7)
-            const ngetikk = await axios.get('https://mhankbarbar.herokuapp.com/nulis?text='+ ngettik+'&apiKey='+ barbarkey)
-            if (ngetikk.data.error) return tobz.reply(from, ngetikk.data.error, id)
-            tobz.sendFileFromUrl(from, ngetikk.data.result, 'nulis.jpg', '', id)
+            const ngetikk = await axios.get('https://mhankbarbars.herokuapp.com/nulis?text='+ ngettik+'&apiKey='+ barbarkey)
+            if (ngetikk.data.error) return xbot.reply(from, ngetikk.data.error, id)
+            xbot.sendFileFromUrl(from, ngetikk.data.result, 'nulis.jpg', '', id)
             break
                 case '#inu':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const list = ["https://cdn.shibe.online/shibes/247d0ac978c9de9d9b66d72dbdc65f2dac64781d.jpg","https://cdn.shibe.online/shibes/1cf322acb7d74308995b04ea5eae7b520e0eae76.jpg","https://cdn.shibe.online/shibes/1ce955c3e49ae437dab68c09cf45297d68773adf.jpg","https://cdn.shibe.online/shibes/ec02bee661a797518d37098ab9ad0c02da0b05c3.jpg","https://cdn.shibe.online/shibes/1e6102253b51fbc116b887e3d3cde7b5c5083542.jpg","https://cdn.shibe.online/shibes/f0c07a7205d95577861eee382b4c8899ac620351.jpg","https://cdn.shibe.online/shibes/3eaf3b7427e2d375f09fc883f94fa8a6d4178a0a.jpg","https://cdn.shibe.online/shibes/c8b9fcfde23aee8d179c4c6f34d34fa41dfaffbf.jpg","https://cdn.shibe.online/shibes/55f298bc16017ed0aeae952031f0972b31c959cb.jpg","https://cdn.shibe.online/shibes/2d5dfe2b0170d5de6c8bc8a24b8ad72449fbf6f6.jpg","https://cdn.shibe.online/shibes/e9437de45e7cddd7d6c13299255e06f0f1d40918.jpg","https://cdn.shibe.online/shibes/6c32141a0d5d089971d99e51fd74207ff10751e7.jpg","https://cdn.shibe.online/shibes/028056c9f23ff40bc749a95cc7da7a4bb734e908.jpg","https://cdn.shibe.online/shibes/4fb0c8b74dbc7653e75ec1da597f0e7ac95fe788.jpg","https://cdn.shibe.online/shibes/125563d2ab4e520aaf27214483e765db9147dcb3.jpg","https://cdn.shibe.online/shibes/ea5258fad62cebe1fedcd8ec95776d6a9447698c.jpg","https://cdn.shibe.online/shibes/5ef2c83c2917e2f944910cb4a9a9b441d135f875.jpg","https://cdn.shibe.online/shibes/6d124364f02944300ae4f927b181733390edf64e.jpg","https://cdn.shibe.online/shibes/92213f0c406787acd4be252edb5e27c7e4f7a430.jpg","https://cdn.shibe.online/shibes/40fda0fd3d329be0d92dd7e436faa80db13c5017.jpg","https://cdn.shibe.online/shibes/e5c085fc427528fee7d4c3935ff4cd79af834a82.jpg","https://cdn.shibe.online/shibes/f83fa32c0da893163321b5cccab024172ddbade1.jpg","https://cdn.shibe.online/shibes/4aa2459b7f411919bf8df1991fa114e47b802957.jpg","https://cdn.shibe.online/shibes/2ef54e174f13e6aa21bb8be3c7aec2fdac6a442f.jpg","https://cdn.shibe.online/shibes/fa97547e670f23440608f333f8ec382a75ba5d94.jpg","https://cdn.shibe.online/shibes/fb1b7150ed8eb4ffa3b0e61ba47546dd6ee7d0dc.jpg","https://cdn.shibe.online/shibes/abf9fb41d914140a75d8bf8e05e4049e0a966c68.jpg","https://cdn.shibe.online/shibes/f63e3abe54c71cc0d0c567ebe8bce198589ae145.jpg","https://cdn.shibe.online/shibes/4c27b7b2395a5d051b00691cc4195ef286abf9e1.jpg","https://cdn.shibe.online/shibes/00df02e302eac0676bb03f41f4adf2b32418bac8.jpg","https://cdn.shibe.online/shibes/4deaac9baec39e8a93889a84257338ebb89eca50.jpg","https://cdn.shibe.online/shibes/199f8513d34901b0b20a33758e6ee2d768634ebb.jpg","https://cdn.shibe.online/shibes/f3efbf7a77e5797a72997869e8e2eaa9efcdceb5.jpg","https://cdn.shibe.online/shibes/39a20ccc9cdc17ea27f08643b019734453016e68.jpg","https://cdn.shibe.online/shibes/e67dea458b62cf3daa4b1e2b53a25405760af478.jpg","https://cdn.shibe.online/shibes/0a892f6554c18c8bcdab4ef7adec1387c76c6812.jpg","https://cdn.shibe.online/shibes/1b479987674c9b503f32e96e3a6aeca350a07ade.jpg","https://cdn.shibe.online/shibes/0c80fc00d82e09d593669d7cce9e273024ba7db9.jpg","https://cdn.shibe.online/shibes/bbc066183e87457b3143f71121fc9eebc40bf054.jpg","https://cdn.shibe.online/shibes/0932bf77f115057c7308ef70c3de1de7f8e7c646.jpg","https://cdn.shibe.online/shibes/9c87e6bb0f3dc938ce4c453eee176f24636440e0.jpg","https://cdn.shibe.online/shibes/0af1bcb0b13edf5e9b773e34e54dfceec8fa5849.jpg","https://cdn.shibe.online/shibes/32cf3f6eac4673d2e00f7360753c3f48ed53c650.jpg","https://cdn.shibe.online/shibes/af94d8eeb0f06a0fa06f090f404e3bbe86967949.jpg","https://cdn.shibe.online/shibes/4b55e826553b173c04c6f17aca8b0d2042d309fb.jpg","https://cdn.shibe.online/shibes/a0e53593393b6c724956f9abe0abb112f7506b7b.jpg","https://cdn.shibe.online/shibes/7eba25846f69b01ec04de1cae9fed4b45c203e87.jpg","https://cdn.shibe.online/shibes/fec6620d74bcb17b210e2cedca72547a332030d0.jpg","https://cdn.shibe.online/shibes/26cf6be03456a2609963d8fcf52cc3746fcb222c.jpg","https://cdn.shibe.online/shibes/c41b5da03ad74b08b7919afc6caf2dd345b3e591.jpg","https://cdn.shibe.online/shibes/7a9997f817ccdabac11d1f51fac563242658d654.jpg","https://cdn.shibe.online/shibes/7221241bad7da783c3c4d84cfedbeb21b9e4deea.jpg","https://cdn.shibe.online/shibes/283829584e6425421059c57d001c91b9dc86f33b.jpg","https://cdn.shibe.online/shibes/5145c9d3c3603c9e626585cce8cffdfcac081b31.jpg","https://cdn.shibe.online/shibes/b359c891e39994af83cf45738b28e499cb8ffe74.jpg","https://cdn.shibe.online/shibes/0b77f74a5d9afaa4b5094b28a6f3ee60efcb3874.jpg","https://cdn.shibe.online/shibes/adccfdf7d4d3332186c62ed8eb254a49b889c6f9.jpg","https://cdn.shibe.online/shibes/3aac69180f777512d5dabd33b09f531b7a845331.jpg","https://cdn.shibe.online/shibes/1d25e4f592db83039585fa480676687861498db8.jpg","https://cdn.shibe.online/shibes/d8349a2436420cf5a89a0010e91bf8dfbdd9d1cc.jpg","https://cdn.shibe.online/shibes/eb465ef1906dccd215e7a243b146c19e1af66c67.jpg","https://cdn.shibe.online/shibes/3d14e3c32863195869e7a8ba22229f457780008b.jpg","https://cdn.shibe.online/shibes/79cedc1a08302056f9819f39dcdf8eb4209551a3.jpg","https://cdn.shibe.online/shibes/4440aa827f88c04baa9c946f72fc688a34173581.jpg","https://cdn.shibe.online/shibes/94ea4a2d4b9cb852e9c1ff599f6a4acfa41a0c55.jpg","https://cdn.shibe.online/shibes/f4478196e441aef0ada61bbebe96ac9a573b2e5d.jpg","https://cdn.shibe.online/shibes/96d4db7c073526a35c626fc7518800586fd4ce67.jpg","https://cdn.shibe.online/shibes/196f3ed10ee98557328c7b5db98ac4a539224927.jpg","https://cdn.shibe.online/shibes/d12b07349029ca015d555849bcbd564d8b69fdbf.jpg","https://cdn.shibe.online/shibes/80fba84353000476400a9849da045611a590c79f.jpg","https://cdn.shibe.online/shibes/94cb90933e179375608c5c58b3d8658ef136ad3c.jpg","https://cdn.shibe.online/shibes/8447e67b5d622ef0593485316b0c87940a0ef435.jpg","https://cdn.shibe.online/shibes/c39a1d83ad44d2427fc8090298c1062d1d849f7e.jpg","https://cdn.shibe.online/shibes/6f38b9b5b8dbf187f6e3313d6e7583ec3b942472.jpg","https://cdn.shibe.online/shibes/81a2cbb9a91c6b1d55dcc702cd3f9cfd9a111cae.jpg","https://cdn.shibe.online/shibes/f1f6ed56c814bd939645138b8e195ff392dfd799.jpg","https://cdn.shibe.online/shibes/204a4c43cfad1cdc1b76cccb4b9a6dcb4a5246d8.jpg","https://cdn.shibe.online/shibes/9f34919b6154a88afc7d001c9d5f79b2e465806f.jpg","https://cdn.shibe.online/shibes/6f556a64a4885186331747c432c4ef4820620d14.jpg","https://cdn.shibe.online/shibes/bbd18ae7aaf976f745bc3dff46b49641313c26a9.jpg","https://cdn.shibe.online/shibes/6a2b286a28183267fca2200d7c677eba73b1217d.jpg","https://cdn.shibe.online/shibes/06767701966ed64fa7eff2d8d9e018e9f10487ee.jpg","https://cdn.shibe.online/shibes/7aafa4880b15b8f75d916b31485458b4a8d96815.jpg","https://cdn.shibe.online/shibes/b501169755bcf5c1eca874ab116a2802b6e51a2e.jpg","https://cdn.shibe.online/shibes/a8989bad101f35cf94213f17968c33c3031c16fc.jpg","https://cdn.shibe.online/shibes/f5d78feb3baa0835056f15ff9ced8e3c32bb07e8.jpg","https://cdn.shibe.online/shibes/75db0c76e86fbcf81d3946104c619a7950e62783.jpg","https://cdn.shibe.online/shibes/8ac387d1b252595bbd0723a1995f17405386b794.jpg","https://cdn.shibe.online/shibes/4379491ef4662faa178f791cc592b52653fb24b3.jpg","https://cdn.shibe.online/shibes/4caeee5f80add8c3db9990663a356e4eec12fc0a.jpg","https://cdn.shibe.online/shibes/99ef30ea8bb6064129da36e5673649e957cc76c0.jpg","https://cdn.shibe.online/shibes/aeac6a5b0a07a00fba0ba953af27734d2361fc10.jpg","https://cdn.shibe.online/shibes/9a217cfa377cc50dd8465d251731be05559b2142.jpg","https://cdn.shibe.online/shibes/65f6047d8e1d247af353532db018b08a928fd62a.jpg","https://cdn.shibe.online/shibes/fcead395cbf330b02978f9463ac125074ac87ab4.jpg","https://cdn.shibe.online/shibes/79451dc808a3a73f99c339f485c2bde833380af0.jpg","https://cdn.shibe.online/shibes/bedf90869797983017f764165a5d97a630b7054b.jpg","https://cdn.shibe.online/shibes/dd20e5801badd797513729a3645c502ae4629247.jpg","https://cdn.shibe.online/shibes/88361ee50b544cb1623cb259bcf07b9850183e65.jpg","https://cdn.shibe.online/shibes/0ebcfd98e8aa61c048968cb37f66a2b5d9d54d4b.jpg"]
             let kya = list[Math.floor(Math.random() * list.length)]
-            tobz.sendFileFromUrl(from, kya, 'Dog.jpeg', 'Inu')
+            xbot.sendFileFromUrl(from, kya, 'Dog.jpeg', 'Inu')
             break
         case '#qrcode':
-           if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-        if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+           if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+        if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
            if(!args.lenght >= 2) return
            let qrcodes = body.slice(8)
-           await tobz.sendFileFromUrl(from, `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${qrcodes}`, 'gambar.png', 'Process sukses!')
+           await xbot.sendFileFromUrl(from, `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${qrcodes}`, 'gambar.png', 'Process sukses!')
            break
         case '#ptl':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             const pptl = ["https://i.pinimg.com/564x/b2/84/55/b2845599d303a4f8fc4f7d2a576799fa.jpg","https://i.pinimg.com/236x/98/08/1c/98081c4dffde1c89c444db4dc1912d2d.jpg","https://i.pinimg.com/236x/a7/e2/fe/a7e2fee8b0abef9d9ecc8885557a4e91.jpg","https://i.pinimg.com/236x/ee/ae/76/eeae769648dfaa18cac66f1d0be8c160.jpg","https://i.pinimg.com/236x/b2/84/55/b2845599d303a4f8fc4f7d2a576799fa.jpg","https://i.pinimg.com/564x/78/7c/49/787c4924083a9424a900e8f1f4fdf05f.jpg","https://i.pinimg.com/236x/eb/05/dc/eb05dc1c306f69dd43b7cae7cbe03d27.jpg","https://i.pinimg.com/236x/d0/1b/40/d01b40691c68b84489f938b939a13871.jpg","https://i.pinimg.com/236x/31/f3/06/31f3065fa218856d7650e84b000d98ab.jpg","https://i.pinimg.com/236x/4a/e5/06/4ae5061a5c594d3fdf193544697ba081.jpg","https://i.pinimg.com/236x/56/45/dc/5645dc4a4a60ac5b2320ce63c8233d6a.jpg","https://i.pinimg.com/236x/7f/ad/82/7fad82eec0fa64a41728c9868a608e73.jpg","https://i.pinimg.com/236x/ce/f8/aa/cef8aa0c963170540a96406b6e54991c.jpg","https://i.pinimg.com/236x/77/02/34/77023447b040aef001b971e0defc73e3.jpg","https://i.pinimg.com/236x/4a/5c/38/4a5c38d39687f76004a097011ae44c7d.jpg","https://i.pinimg.com/236x/41/72/af/4172af2053e54ec6de5e221e884ab91b.jpg","https://i.pinimg.com/236x/26/63/ef/2663ef4d4ecfc935a6a2b51364f80c2b.jpg","https://i.pinimg.com/236x/2b/cb/48/2bcb487b6d398e8030814c7a6c5a641d.jpg","https://i.pinimg.com/236x/62/da/23/62da234d941080696428e6d4deec6d73.jpg","https://i.pinimg.com/236x/d4/f3/40/d4f340e614cc4f69bf9a31036e3d03c5.jpg","https://i.pinimg.com/236x/d4/97/dd/d497dd29ca202be46111f1d9e62ffa65.jpg","https://i.pinimg.com/564x/52/35/66/523566d43058e26bf23150ac064cfdaa.jpg","https://i.pinimg.com/236x/36/e5/27/36e52782f8d10e4f97ec4dbbc97b7e67.jpg","https://i.pinimg.com/236x/02/a0/33/02a033625cb51e0c878e6df2d8d00643.jpg","https://i.pinimg.com/236x/30/9b/04/309b04d4a498addc6e4dd9d9cdfa57a9.jpg","https://i.pinimg.com/236x/9e/1d/ef/9e1def3b7ce4084b7c64693f15b8bea9.jpg","https://i.pinimg.com/236x/e1/8f/a2/e18fa21af74c28e439f1eb4c60e5858a.jpg","https://i.pinimg.com/236x/22/d9/22/22d9220de8619001fe1b27a2211d477e.jpg","https://i.pinimg.com/236x/af/ac/4d/afac4d11679184f557d9294c2270552d.jpg","https://i.pinimg.com/564x/52/be/c9/52bec924b5bdc0d761cfb1160865b5a1.jpg","https://i.pinimg.com/236x/1a/5a/3c/1a5a3cffd0d936cd4969028668530a15.jpg"]
             let pep = pptl[Math.floor(Math.random() * pptl.length)]
-            tobz.sendFileFromUrl(from, pep, 'pptl.jpg', 'Follow ig : https://www.instagram.com/ptl_repost untuk mendapatkan penyegar timeline lebih banyak', message.id)
+            xbot.sendFileFromUrl(from, pep, 'pptl.jpg', 'Jangan jadikan bacol ya cok :v', message.id)
             break
         case '#neko':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             q2 = Math.floor(Math.random() * 900) + 300;
             q3 = Math.floor(Math.random() * 900) + 300;
-            tobz.sendFileFromUrl(from, 'http://placekitten.com/'+q3+'/'+q2, 'neko.png','Neko ')
+            xbot.sendFileFromUrl(from, 'http://placekitten.com/'+q3+'/'+q2, 'neko.png','Neko ')
             break
         case '#pokemon':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
             q7 = Math.floor(Math.random() * 890) + 1;
-            tobz.sendFileFromUrl(from, 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/'+q7+'.png','Pokemon.png',)
+            xbot.sendFileFromUrl(from, 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/'+q7+'.png','Pokemon.png',)
             break
         case '#quote':
         case '#quotes':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            const quotez2 = await axios.get('https://mhankbarbar.herokuapp.com/api/randomquotes')
-            tobz.reply(from, `➸ *Quotes* : ${quotez2.data.quotes}\n➸ *Author* : ${quotez2.data.author}`, id)
+            const quotez2 = await axios.get('https://mhankbarbars.herokuapp.com/api/randomquotes')
+            xbot.reply(from, `➸ *Quotes* : ${quotez2.data.quotes}\n➸ *Author* : ${quotez2.data.author}`, id)
             break
         case '#lirik':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length == 1) return tobz.reply(from, 'Kirim perintah *#lirik [optional]*, contoh *#lirik aku bukan boneka*', id)
+            if (args.length == 1) return xbot.reply(from, 'Kirim perintah *#lirik [optional]*, contoh *#lirik aku bukan boneka*', id)
             const lagu = body.slice(7)
             const lirik = await liriklagu(lagu)
-            tobz.reply(from, lirik, id)
+            xbot.reply(from, lirik, id)
             break
         case '#chord':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return tobz.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return tobz.reply(from, 'Kirim perintah *#chord [query]*, contoh *#chord aku bukan boneka*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#chord [query]*, contoh *#chord aku bukan boneka*', id)
             const query__ = body.slice(7)
-            const chord = await axios.get('https://mhankbarbar.herokuapp.com/api/chord?q='+ query__+'&apiKey='+ barbarkey)
-            if (chord.data.error) return tobz.reply(from, chord.data.error, id)
-            tobz.reply(from, chord.data.result, id)
+            const chord = await axios.get('https://mhankbarbars.herokuapp.com/api/chord?q='+ query__+'&apiKey='+ barbarkey)
+            if (chord.data.error) return xbot.reply(from, chord.data.error, id)
+            xbot.reply(from, chord.data.result, id)
             break
         case '#listdaerah':
-            if (!isGroupMsg) return tobz.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-            const listDaerah = await axios.get('https://mhankbarbar.herokuapp.com/daerah')
-            tobz.reply(from, listDaerah.data.result, id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            const listDaerah = await axios.get('https://mhankbarbars.herokuapp.com/daerah')
+            xbot.reply(from, listDaerah.data.result, id)
             break
         // ADMIN & OWNER
         case '#bc': // KASIH CREDIT DONG KALO COPAS
-            if (!isOwner) return tobz.reply(from, `Perintah ini hanya untuk Owner XBOT`, id)
+            if (!isOwner) return xbot.reply(from, `Perintah ini hanya untuk Owner XBOT`, id)
                 bctxt = body.slice(4)
                 txtbc = `*「 XBOT BROADCAST 」*\n\n${bctxt}`
-                const semuagrup = await tobz.getAllChatIds();
+                const semuagrup = await xbot.getAllChatIds();
                 if(quotedMsg && quotedMsg.type == 'image'){
                     const mediaData = await decryptMedia(quotedMsg)
                     const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
                     for(let grupnya of semuagrup){
-                        var cekgrup = await tobz.getChatById(grupnya)
-                        if(!cekgrup.isReadOnly) tobz.sendImage(grupnya, imageBase64, 'gambar.jpeg', txtbc)
+                        var cekgrup = await xbot.getChatById(grupnya)
+                        if(!cekgrup.isReadOnly) xbot.sendImage(grupnya, imageBase64, 'gambar.jpeg', txtbc)
                     }
-                    tobz.reply('Broadcast sukses!')
+                    xbot.reply('Broadcast sukses!')
                 }else{
                     for(let grupnya of semuagrup){
-                        var cekgrup = await tobz.getChatById(grupnya)
-                        if(!cekgrup.isReadOnly && isMuted(grupnya)) tobz.sendText(grupnya, txtbc)
+                        var cekgrup = await xbot.getChatById(grupnya)
+                        if(!cekgrup.isReadOnly && isMuted(grupnya)) xbot.sendText(grupnya, txtbc)
                     }
-                            tobz.reply('Broadcast Success!')
+                            xbot.reply('Broadcast Success!')
                 }
                 break
         case '#adminlist':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             let mimin = ''
             for (let admon of groupAdmins) {
                 mimin += `➸ @${admon.replace(/@c.us/g, '')}\n` 
             }
             await sleep(2000)
-            await tobz.sendTextWithMentions(from, mimin)
+            await xbot.sendTextWithMentions(from, mimin)
             break
         case '#ownergroup':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const Owner_ = chat.groupMetadata.owner
-            await tobz.sendTextWithMentions(from, `Owner Group : @${Owner_}`)
+            await xbot.sendTextWithMentions(from, `Owner Group : @${Owner_}`)
             break
         case '#otagall': // FOR OWNER & ADMIN XBOT
         case '#omentionall':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isOwner, !isAdmin) return tobz.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
-            const groupMek = await tobz.getGroupMembers(groupId)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isOwner, !isAdmin) return xbot.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
+            const groupMek = await xbot.getGroupMembers(groupId)
             let heho = '╔══✪〘 Mention All 〙✪══\n'
             for (let i = 0; i < groupMek.length; i++) {
                 heho += '╠➥'
@@ -2384,13 +2845,13 @@ Menunggu video...`
             }
             heho += '╚═〘 XBOT OFFICIAL 〙'
             await sleep(2000)
-            await tobz.sendTextWithMentions(from, heho)
+            await xbot.sendTextWithMentions(from, heho)
             break
         case '#tagall': // FOR GROUP ADMINS
         case '#mentionall':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
-            const groupMem = await tobz.getGroupMembers(groupId)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
+            const groupMem = await xbot.getGroupMembers(groupId)
             let hehe = '╔══✪〘 Mention All 〙✪══\n'
             for (let i = 0; i < groupMem.length; i++) {
                 hehe += '╠➥'
@@ -2398,207 +2859,221 @@ Menunggu video...`
             }
             hehe += '╚═〘 XBOT OFFICIAL 〙'
             await sleep(2000)
-            await tobz.sendTextWithMentions(from, hehe)
+            await xbot.sendTextWithMentions(from, hehe)
             break
         case '#ekickall':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            const allMem = await tobz.getGroupMembers(groupId)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            const allMem = await xbot.getGroupMembers(groupId)
             for (let i = 0; i < allMem.length; i++) {
                 if (ownerNumber.includes(allMem[i].id)) {
                     console.log('Upss this is Admin group')
                 } else {
-                    await tobz.removeParticipant(groupId, allMem[i].id)
+                    await xbot.removeParticipant(groupId, allMem[i].id)
                 }
             }
-            tobz.reply(from, 'Success kick all member', id)
+            xbot.reply(from, 'Success kick all member', id)
             break
         case '#okickall':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            const allMeq = await tobz.getGroupMembers(groupId)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            const allMeq = await xbot.getGroupMembers(groupId)
             for (let i = 0; i < allMeq.length; i++) {
                 if ((adminNumber, ownerNumber).includes(allMeq[i].id)) {
                     console.log('Upss this is Admin group')
                 } else {
-                    await tobz.removeParticipant(groupId, allMeq[i].id)
+                    await xbot.removeParticipant(groupId, allMeq[i].id)
                 }
             }
-            tobz.reply(from, 'Succes kick all member', id)
+            xbot.reply(from, 'Succes kick all member', id)
             break
         case '#kickall':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             const isGroupOwner = sender.id === chat.groupMetadata.owner
-            if (!isGroupOwner) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner group', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            const allMek = await tobz.getGroupMembers(groupId)
+            if (!isGroupOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner group', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            const allMek = await xbot.getGroupMembers(groupId)
             for (let i = 0; i < allMek.length; i++) {
                 if ((adminNumber, ownerNumber).includes(allMek[i].id)) {
                     console.log('Upss this is Admin group')
                 } else {
-                    await tobz.removeParticipant(groupId, allMek[i].id)
+                    await xbot.removeParticipant(groupId, allMek[i].id)
                 }
             }
-            tobz.reply(from, 'Success kick all member', id)
+            xbot.reply(from, 'Success kick all member', id)
             break
         case '#leaveall':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
-            const allChats = await tobz.getAllChatIds()
-            const allGroups = await tobz.getAllGroups()
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
+            const allChats = await xbot.getAllChatIds()
+            const allGroups = await xbot.getAllGroups()
             for (let gclist of allGroups) {
-                await tobz.sendText(gclist.contact.id, `Maaf bot sedang pembersihan, total chat aktif : ${allChats.length}`)
-                await tobz.leaveGroup(gclist.contact.id)
+                await xbot.sendText(gclist.contact.id, `Maaf bot sedang pembersihan, total chat aktif : ${allChats.length}`)
+                await xbot.leaveGroup(gclist.contact.id)
             }
-            tobz.reply(from, 'Succes leave all group!', id)
+            xbot.reply(from, 'Succes leave all group!', id)
             break
         case '#clearall':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
-            const allChatz = await tobz.getAllChats()
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
+            const allChatz = await xbot.getAllChats()
             for (let dchat of allChatz) {
-                await tobz.deleteChat(dchat.id)
+                await xbot.deleteChat(dchat.id)
             }
-            tobz.reply(from, 'Succes clear all chat!', id)
+            xbot.reply(from, 'Succes clear all chat!', id)
             break
         case '#oadd':
             const orang = args[1]
-            if (!isGroupMsg) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
-            if (args.length === 1) return tobz.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#add* 628xxxxx', id)
-            if (!isOwner, !isAdmin) return tobz.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+            if (args.length === 1) return xbot.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#add* 628xxxxx', id)
+            if (!isOwner, !isAdmin) return xbot.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
             try {
-                await tobz.addParticipant(from,`${orang}@c.us`)
+                await xbot.addParticipant(from,`${orang}@c.us`)
             } catch {
-                tobz.reply(from, mess.error.Ad, id)
+                xbot.reply(from, mess.error.Ad, id)
             }
             break
         case '#add':
             const orgh = body.slice(5)
-            if (!isGroupMsg) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
-            if (args.length === 1) return tobz.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#add* 628xxxxx', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+            if (args.length === 1) return xbot.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#add* 628xxxxx', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
             try {
-                await tobz.addParticipant(from,`${orgh}@c.us`)
+                await xbot.addParticipant(from,`${orgh}@c.us`)
             } catch {
-                tobz.reply(from, mess.error.Ad, id)
+                xbot.reply(from, mess.error.Ad, id)
             }
             break
         case '#okick':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            if (mentionedJidList.length === 0) return tobz.reply(from, 'Untuk menggunakan Perintah ini, kirim perintah *#okick* @tagmember', id)
-            await tobz.sendText(from, `Perintah Owner diterima, mengeluarkan:\n${mentionedJidList.join('\n')}`)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (mentionedJidList.length === 0) return xbot.reply(from, 'Untuk menggunakan Perintah ini, kirim perintah *#okick* @tagmember', id)
+            await xbot.sendText(from, `Perintah Owner diterima, mengeluarkan:\n${mentionedJidList.join('\n')}`)
             for (let i = 0; i < mentionedJidList.length; i++) {
-                if ((adminNumber, ownerNumber).includes(mentionedJidList[i])) return tobz.reply(from, mess.error.Sp, id)
-                await tobz.removeParticipant(groupId, mentionedJidList[i])
+                if ((adminNumber, ownerNumber).includes(mentionedJidList[i])) return xbot.reply(from, mess.error.Sp, id)
+                await xbot.removeParticipant(groupId, mentionedJidList[i])
             }
             break
         case '#kick':
-            if (!isGroupMsg) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            if (mentionedJidList.length === 0) return tobz.reply(from, 'Untuk menggunakan Perintah ini, kirim perintah *#kick* @tagmember', id)
-            await tobz.sendText(from, `Perintah diterima, mengeluarkan:\n${mentionedJidList.join('\n')}`)
+            if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (mentionedJidList.length === 0) return xbot.reply(from, 'Untuk menggunakan Perintah ini, kirim perintah *#kick* @tagmember', id)
+            await xbot.sendText(from, `Perintah diterima, mengeluarkan:\n${mentionedJidList.join('\n')}`)
             for (let i = 0; i < mentionedJidList.length; i++) {
-                if ((adminNumber, groupAdmins).includes(mentionedJidList[i])) return tobz.reply(from, mess.error.Sp, id)
-                await tobz.removeParticipant(groupId, mentionedJidList[i])
+                if ((adminNumber, groupAdmins).includes(mentionedJidList[i])) return xbot.reply(from, mess.error.Sp, id)
+                await xbot.removeParticipant(groupId, mentionedJidList[i])
             }
             break
         case '#oleave':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (!isOwner, !isAdmin) return tobz.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
-            await tobz.sendText(from,'XBOT DIPERINTAHKAN KELUAR OLEH OWNER!!').then(() => tobz.leaveGroup(groupId))
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (!isOwner, !isAdmin) return xbot.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
+            await xbot.sendText(from,'XBOT DIPERINTAHKAN KELUAR OLEH OWNER!!').then(() => xbot.leaveGroup(groupId))
             break
         case '#leave':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
-            await tobz.sendText(from,'Sayonara').then(() => tobz.leaveGroup(groupId))
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
+            await xbot.sendText(from,'Sayonara').then(() => xbot.leaveGroup(groupId))
             break
         case '#opromote':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (!isOwner, !isAdmin) return tobz.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            if (mentionedJidList.length === 0) return tobz.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#promote* @tagmember', id)
-            if (mentionedJidList.length >= 2) return tobz.reply(from, 'Maaf, perintah ini hanya dapat digunakan kepada 1 user.', id)
-            if (groupAdmins.includes(mentionedJidList[0])) return tobz.reply(from, 'Maaf, user tersebut sudah menjadi admin.', id)
-            await tobz.promoteParticipant(groupId, mentionedJidList[0])
-            await tobz.sendTextWithMentions(from, `Perintah Owner diterima, menambahkan @${mentionedJidList[0]} sebagai admin.`)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (!isOwner, !isAdmin) return xbot.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (mentionedJidList.length === 0) return xbot.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#promote* @tagmember', id)
+            if (mentionedJidList.length >= 2) return xbot.reply(from, 'Maaf, perintah ini hanya dapat digunakan kepada 1 user.', id)
+            if (groupAdmins.includes(mentionedJidList[0])) return xbot.reply(from, 'Maaf, user tersebut sudah menjadi admin.', id)
+            await xbot.promoteParticipant(groupId, mentionedJidList[0])
+            await xbot.sendTextWithMentions(from, `Perintah Owner diterima, menambahkan @${mentionedJidList[0]} sebagai admin.`)
             break
         case '#promote':
-            if (!isGroupMsg) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan oleh admin group', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            if (mentionedJidList.length === 0) return tobz.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#promote* @tagmember', id)
-            if (mentionedJidList.length >= 2) return tobz.reply(from, 'Maaf, perintah ini hanya dapat digunakan kepada 1 user.', id)
-            if (groupAdmins.includes(mentionedJidList[0])) return tobz.reply(from, 'Maaf, user tersebut sudah menjadi admin.', id)
-            await tobz.promoteParticipant(groupId, mentionedJidList[0])
-            await tobz.sendTextWithMentions(from, `Perintah diterima, menambahkan @${mentionedJidList[0]} sebagai admin.`)
+            if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan oleh admin group', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (mentionedJidList.length === 0) return xbot.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#promote* @tagmember', id)
+            if (mentionedJidList.length >= 2) return xbot.reply(from, 'Maaf, perintah ini hanya dapat digunakan kepada 1 user.', id)
+            if (groupAdmins.includes(mentionedJidList[0])) return xbot.reply(from, 'Maaf, user tersebut sudah menjadi admin.', id)
+            await xbot.promoteParticipant(groupId, mentionedJidList[0])
+            await xbot.sendTextWithMentions(from, `Perintah diterima, menambahkan @${mentionedJidList[0]} sebagai admin.`)
             break
         case '#odemote':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (!isOwner, !isAdmin) return tobz.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            if (mentionedJidList.length === 0) return tobz.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#demote* @tagadmin', id)
-            if (mentionedJidList.length >= 2) return tobz.reply(from, 'Maaf, perintah ini hanya dapat digunakan kepada 1 orang.', id)
-            if (!groupAdmins.includes(mentionedJidList[0])) return tobz.reply(from, 'Maaf, user tersebut tidak menjadi admin.', id)
-            await tobz.demoteParticipant(groupId, mentionedJidList[0])
-            await tobz.sendTextWithMentions(from, `Perintah Owner diterima, menghapus jabatan @${mentionedJidList[0]}.`)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (!isOwner, !isAdmin) return xbot.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (mentionedJidList.length === 0) return xbot.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#demote* @tagadmin', id)
+            if (mentionedJidList.length >= 2) return xbot.reply(from, 'Maaf, perintah ini hanya dapat digunakan kepada 1 orang.', id)
+            if (!groupAdmins.includes(mentionedJidList[0])) return xbot.reply(from, 'Maaf, user tersebut tidak menjadi admin.', id)
+            await xbot.demoteParticipant(groupId, mentionedJidList[0])
+            await xbot.sendTextWithMentions(from, `Perintah Owner diterima, menghapus jabatan @${mentionedJidList[0]}.`)
             break
         case '#demote':
-            if (!isGroupMsg) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan oleh admin group', id)
-            if (!isBotGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
-            if (mentionedJidList.length === 0) return tobz.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#demote* @tagadmin', id)
-            if (mentionedJidList.length >= 2) return tobz.reply(from, 'Maaf, perintah ini hanya dapat digunakan kepada 1 orang.', id)
-            if (!groupAdmins.includes(mentionedJidList[0])) return tobz.reply(from, 'Maaf, user tersebut tidak menjadi admin.', id)
-            await tobz.demoteParticipant(groupId, mentionedJidList[0])
-            await tobz.sendTextWithMentions(from, `Perintah diterima, menghapus jabatan @${mentionedJidList[0]}.`)
+            if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan oleh admin group', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan ketika bot menjadi admin', id)
+            if (mentionedJidList.length === 0) return xbot.reply(from, 'Untuk menggunakan fitur ini, kirim perintah *#demote* @tagadmin', id)
+            if (mentionedJidList.length >= 2) return xbot.reply(from, 'Maaf, perintah ini hanya dapat digunakan kepada 1 orang.', id)
+            if (!groupAdmins.includes(mentionedJidList[0])) return xbot.reply(from, 'Maaf, user tersebut tidak menjadi admin.', id)
+            await xbot.demoteParticipant(groupId, mentionedJidList[0])
+            await xbot.sendTextWithMentions(from, `Perintah diterima, menghapus jabatan @${mentionedJidList[0]}.`)
             break
         case '#join':
-            if (args.length === 1) return tobz.reply(from, 'Hanya Owner yang bisa memasukan Bot ke dalam Grup!', id)
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
+            if (args.length === 1) return xbot.reply(from, 'Hanya Owner yang bisa memasukan Bot ke dalam Grup!', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
             const link = body.slice(6)
-            const tGr = await tobz.getAllGroups()
+            const tGr = await xbot.getAllGroups()
             const minMem = 5
             const isLink = link.match(/(https:\/\/chat.whatsapp.com)/gi)
-            const check = await tobz.inviteInfo(link)
-            if (!isLink) return tobz.reply(from, 'Ini link? 👊🤬', id)
-            if (tGr.length > 256) return tobz.reply(from, 'Maaf jumlah group sudah maksimal!', id)
-            if (check.size < minMem) return tobz.reply(from, 'Member group tidak melebihi 5, bot tidak bisa masuk', id)
+            const check = await xbot.inviteInfo(link)
+            if (!isLink) return xbot.reply(from, 'Ini link? 👊🤬', id)
+            if (tGr.length > 256) return xbot.reply(from, 'Maaf jumlah group sudah maksimal!', id)
+            if (check.size < minMem) return xbot.reply(from, 'Member group tidak melebihi 5, bot tidak bisa masuk', id)
             if (check.status === 200) {
-                await tobz.joinGroupViaLink(link).then(() => tobz.reply(from, 'Bot akan segera masuk!'))
+                await xbot.joinGroupViaLink(link).then(() => xbot.reply(from, 'Bot akan segera masuk!'))
             } else {
-                tobz.reply(from, 'Link group tidak valid!', id)
+                xbot.reply(from, 'Link group tidak valid!', id)
             }
             break
         case '#odelete':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
-            if (!isOwner, !isAdmin) return tobz.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
-            if (!quotedMsg) return tobz.reply(from, 'Salah!!, kirim perintah *#delete [tagpesanbot]*', id)
-            if (!quotedMsgObj.fromMe) return tobz.reply(from, 'Salah!!, Bot tidak bisa mengahpus chat user lain!', id)
-            tobz.deleteMessage(quotedMsgObj.chatId, quotedMsgObj.id, false)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
+            if (!isOwner, !isAdmin) return xbot.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
+            if (!quotedMsg) return xbot.reply(from, 'Salah!!, kirim perintah *#delete [tagpesanbot]*', id)
+            if (!quotedMsgObj.fromMe) return xbot.reply(from, 'Salah!!, Bot tidak bisa mengahpus chat user lain!', id)
+            xbot.deleteMessage(quotedMsgObj.chatId, quotedMsgObj.id, false)
             break
+ case `#addlimit`:
+			if (!isOwner) return xbot.reply(from, 'Maaf kak, hanya untuk Admin XBOT.', id)
+			var found = false;
+                    Object.keys(limit).forEach((i) => {
+                        if(limit[i].id == mentionedJidList[0]){
+                            found = i
+                        }
+                    })
+                    if (found !== false) {
+                        limit[found].limit -= args[1];
+                        fs.writeFileSync('./lib/database/limit.json',JSON.stringify(limit));
+                    }
+						xbot.sendTextWithMentions(from, `Berhasil menambahkan ${args[1]} limit ke @${mentionedJidList[0].replace('@c.us', '')}` )
+					break
         case '#delete':
-            if (!isGroupMsg) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
-            if (!isGroupAdmins) return tobz.reply(from, 'Fitur ini hanya bisa di gunakan oleh admin group', id)
-            if (!quotedMsg) return tobz.reply(from, 'Salah!!, kirim perintah *#delete [tagpesanbot]*', id)
-            if (!quotedMsgObj.fromMe) return tobz.reply(from, 'Salah!!, Bot tidak bisa mengahpus chat user lain!', id)
-            tobz.deleteMessage(quotedMsgObj.chatId, quotedMsgObj.id, false)
+            if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan oleh admin group', id)
+            if (!quotedMsg) return xbot.reply(from, 'Salah!!, kirim perintah *#delete [tagpesanbot]*', id)
+            if (!quotedMsgObj.fromMe) return xbot.reply(from, 'Salah!!, Bot tidak bisa mengahpus chat user lain!', id)
+            xbot.deleteMessage(quotedMsgObj.chatId, quotedMsgObj.id, false)
             break
         case '#getses':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)            
-            const sesPic = await tobz.getSnapshot()
-            tobz.sendFile(from, sesPic, 'session.png', 'Nih boss', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)            
+            const sesPic = await xbot.getSnapshot()
+            xbot.sendFile(from, sesPic, 'session.png', 'Nih boss', id)
             break
         case '#xbotadmin':
             let admn = `This is list of XBOT Admin\nTotal : ${adminNumber.length}\n`
             for (let i of adminNumber) {
                 admn += `➸ ${i.replace(/@c.us/g,'')}\n`
             }
-            await tobz.reply(from, admn, id)
+            await xbot.reply(from, admn, id)
             break
         case '#limit':
             var found = false
@@ -2606,8 +3081,8 @@ Menunggu video...`
             for(let lmt of limidat){
                 if(lmt.id === serial){
                     let limitCounts = limitCount-lmt.limit
-                    if(limitCounts <= 0) return tobz.reply(from, `Limit request anda sudah habis\n\n_Note : Limit akan direset setiap jam 21:00!_`, id)
-                    tobz.reply(from, `Sisa limit request anda tersisa : *${limitCounts}*\n\n_Note : Limit akan direset setiap jam 21:00!_`, id)
+                    if(limitCounts <= 0) return xbot.reply(from, `_Limit request anda sudah habis_`, id)
+                    xbot.reply(from, `Sisa limit request anda tersisa : *${limitCounts}*_`, id)
                     found = true
                 }
             }
@@ -2617,12 +3092,12 @@ Menunggu video...`
                 let obj = {id: `${serial}`, limit:1};
                 limit.push(obj);
                 fs.writeFileSync('./lib/database/limit.json',JSON.stringify(limit, 1));
-                tobz.reply(from, `Sisa limit request anda tersisa : *${limitCount}*\n\n_Note : Limit akan direset setiap jam 21:00!_`, id)
+                xbot.reply(from, `Sisa limit request anda tersisa : *${limitCount}*\n\n_Note : Limit akan direset setiap jam 21:00!_`, id)
             }
             break
         case '#restart': // WORK IF YOU RUN USING PM2
             if(isOwner){
-                tobz.sendText(from, '*[WARN]* Restarting ...')
+                xbot.sendText(from, '*[WARN]* Restarting ...')
                 setting.restartState = true
                 setting.restartId = chatId
                 var obj = []
@@ -2656,83 +3131,83 @@ Menunggu video...`
             }
             break
         case '#addadmin':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
                 for (let i = 0; i < mentionedJidList.length; i++) {
                 adminNumber.push(mentionedJidList[i])
                 fs.writeFileSync('./lib/database/admin.json', JSON.stringify(adminNumber))
-                tobz.reply(from, 'Success Menambahkan Admin XBOT!', id)
+                xbot.reply(from, 'Success Menambahkan Admin XBOT!', id)
                 }
             break
         case '#deladmin':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
                 let inq = adminNumber.indexOf(mentionedJidList[0])
                 adminNumber.splice(inq, 1)
                 fs.writeFileSync('./lib/database/admin.json', JSON.stringify(adminNumber))
-                tobz.reply(from, 'Success Menghapus Admin XBOT!', id)
-            break
-           case '#addprem':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner Bot!', id)
-                if (mentionedJidList.length === 0) return tobz.reply(from, ind.wrongFormat(), id)
-                if (mentionedJidList[0] === botNumber) return tobz.reply(from, ind.wrongFormat(), id)
-                for (let premi of mentionedJidList) {
-                    premium.push(premi)
-                    fs.writeFileSync('./lib/database/premium.json', JSON.stringify(premium))
-                }
-                tobz.reply(from, 'Success Menambahkan Sebagai User Premium!', id)
+                xbot.reply(from, 'Success Menghapus Admin XBOT!', id)
+ 
+            break 
+ 		case `#addprem`:
+		 //	if (!isAdmin) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Admin Sasha', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
+				for (let i = 0; i < mentionedJidList.length; i++) {
+				premium.push(mentionedJidList[i])
+				fs.writeFileSync('./lib/database/premium.json', JSON.stringify(VipUser))
+				xbot.sendTextWithMentions(from, `Success Menambahkan User VIP XBOT!\n╭──────「 *VIP👑* 」──────\n│+ *UserID* : @${mentionedJidList[0].replace('@c.us', '')}\n│+ *Status* : *ACTIVE*\n│+ *Since* : ${time}\n│+ *Expired* : ${timu}\n│ Thx for Upgrade to VIP🥰\n╰──────「 *XBOT* 」────`, id)
+				}
             break
             case '#delprem':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner Bot!', id)
-                if (mentionedJidList.length === 0) return tobz.reply(from, ind.wrongFormat(), id)
-                if (mentionedJidList[0] === botNumber) return tobz.reply(from, ind.wrongFormat(), id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner Bot!', id)
+                if (mentionedJidList.length === 0) return xbot.reply(from, ind.wrongFormat(), id)
+                if (mentionedJidList[0] === botNumber) return xbot.reply(from, ind.wrongFormat(), id)
                 let predel = premium.indexOf(mentionedJidList[0])
                 premium.splice(predel, 1)
                 fs.writeFileSync('./lib/database/premium.json', JSON.stringify(premium))
-                tobz.reply(from, 'Success Menghapus Member Premium!', id)
+                xbot.reply(from, 'Success Menghapus Member Premium!', id)
             break
 
         case '#block':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
             for (let i = 0; i < mentionedJidList.length; i++) {
                 let unblock = `${mentionedJidList[i]}`
-                await tobz.contactBlock(unblock).then((a)=>{
+                await xbot.contactBlock(unblock).then((a)=>{
                     console.log(a)
-                    tobz.reply(from, `Success block ${args[1]}!`, id)
+                    xbot.reply(from, `Success block ${args[1]}!`, id)
                 })
             }
             break
         case '#unblock':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh Owner XBOT!', id)
             for (let i = 0; i < mentionedJidList.length; i++) {
                 let unblock = `${mentionedJidList[i]}`
-                await tobz.contactUnblock(unblock).then((a)=>{
+                await xbot.contactUnblock(unblock).then((a)=>{
                     console.log(a)
-                    tobz.reply(from, `Success unblok ${args[1]}!`, id)
+                    xbot.reply(from, `Success unblok ${args[1]}!`, id)
                 })
             } 
             break
         case '#ban':
-            if (!isAdmin) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin XBOT!', id)
+            if (!isAdmin) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin XBOT!', id)
                 for (let i = 0; i < mentionedJidList.length; i++) {
                 banned.push(mentionedJidList[i])
                 fs.writeFileSync('./lib/database/banned.json', JSON.stringify(banned))
-                tobz.reply(from, 'Succes ban target!',id)
+                xbot.reply(from, 'Succes ban target!',id)
             }
             break
         case '#unban':
-            if (!isAdmin) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin XBOT!', id)
+            if (!isAdmin) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin XBOT!', id)
                 let inz = banned.indexOf(mentionedJidList[0])
                 banned.splice(inz, 1)
                 fs.writeFileSync('./lib/database/banned.json', JSON.stringify(banned))
-                tobz.reply(from, 'Unbanned User!', id)
+                xbot.reply(from, 'Unbanned User!', id)
             break
         case '#listgroup':
-                tobz.getAllGroups().then((res) => {
+                xbot.getAllGroups().then((res) => {
                 let berhitung1 = 1
                 let gc = `*This is list of group* :\n`
                 for (let i = 0; i < res.length; i++) {
                     gc += `\n═════════════════\n\n*No : ${i+1}*\n*Nama* : ${res[i].name}\n*Pesan Belum Dibaca* : ${res[i].unreadCount} chat\n*Tidak Spam* : ${res[i].notSpam}\n`
                 }
-                tobz.reply(from, gc, id)
+                xbot.reply(from, gc, id)
             })
             break
         case '#listbanned':
@@ -2740,51 +3215,59 @@ Menunggu video...`
             for (let i of banned) {
                 bened += `➸ ${i.replace(/@c.us/g,'')}\n`
             }
-            await tobz.reply(from, bened, id)
+            await xbot.reply(from, bened, id)
             break
         case '#listblock':
             let hih = `This is list of blocked number\nTotal : ${blockNumber.length}\n`
             for (let i of blockNumber) {
                 hih += `➸ ${i.replace(/@c.us/g,'')}\n`
             }
-            await tobz.reply(from, hih, id)
+            await xbot.reply(from, hih, id)
             break
+        case `#listprem`:
+
+            let lv = `  「 *MEMBER PREMIUM* 」\n\nTotal : ${Premium.length}\n`
+            for (let i of Premium) {
+                lv += `\n ➥ ${i.replace(/@c.us/g,'')}\n`
+            }
+            await xbot.reply(from, lv, id)
+            break        
         case '#ping':
-            const loadedMsg = await tobz.getAmountOfLoadedMessages()
-            const chatIds = await tobz.getAllChatIds()
-            const groups = await tobz.getAllGroups()
+            const loadedMsg = await xbot.getAmountOfLoadedMessages()
+            const chatIds = await xbot.getAllChatIds()
+            const groups = await xbot.getAllGroups()
             const timestamp = speed();
             const latensi = speed() - timestamp
-            tobz.sendText(from, `Penggunaan RAM: *${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB*\nCPU: *${os.cpus().length}*\n\nStatus :\n- *${loadedMsg}* Loaded Messages\n- *${groups.length}* Group Chats\n- *${chatIds.length - groups.length}* Personal Chats\n- *${chatIds.length}* Total Chats\n\nSpeed: ${latensi.toFixed(4)} _Second_`)
+            xbot.sendText(from, `Penggunaan RAM: *${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB*\nCPU: *${os.cpus().length}*\n\nStatus :\n- *${loadedMsg}* Loaded Messages\n- *${groups.length}* Group Chats\n- *${chatIds.length - groups.length}* Personal Chats\n- *${chatIds.length}* Total Chats\n\nSpeed: ${latensi.toFixed(4)} _Second_`)
             break
         case '#setgroupicon':
-            if (!isGroupMsg) return tobz.reply(from, `Fitur ini hanya bisa di gunakan dalam group`, id)
-            if (!isGroupAdmins) return tobz.reply(from, `Fitur ini hanya bisa di gunakan oleh admin group`, id)
-            if (!isBotGroupAdmins) return tobz.reply(from, `Fitur ini hanya bisa di gunakan ketika bot menjadi admin`, id)
+            if (!isGroupMsg) return xbot.reply(from, `Fitur ini hanya bisa di gunakan dalam group`, id)
+            if (!isGroupAdmins) return xbot.reply(from, `Fitur ini hanya bisa di gunakan oleh admin group`, id)
+            if (!isBotGroupAdmins) return xbot.reply(from, `Fitur ini hanya bisa di gunakan ketika bot menjadi admin`, id)
             if (isMedia) {
                 const mediaData = await decryptMedia(message)
                 const imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
-                await tobz.setGroupIcon(from, imageBase64)
-                tobz.sendTextWithMentions(from, `Profile group telah diubah oleh admin @${sender.id.replace('@c.us','')}`)
+                await xbot.setGroupIcon(from, imageBase64)
+                xbot.sendTextWithMentions(from, `Profile group telah diubah oleh admin @${sender.id.replace('@c.us','')}`)
             } else if (quotedMsg && quotedMsg.type == 'image') {
                 const mediaData = await decryptMedia(quotedMsg)
                 const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
-                await tobz.setGroupIcon(from, imageBase64)
-                tobz.sendTextWithMentions(from, `Profile group telah diubah oleh admin @${sender.id.replace('@c.us','')}`)
+                await xbot.setGroupIcon(from, imageBase64)
+                xbot.sendTextWithMentions(from, `Profile group telah diubah oleh admin @${sender.id.replace('@c.us','')}`)
             } else {
-                tobz.reply(from, `Wrong Format!\n⚠️ Harap Kirim Gambar Dengan #setgroupicon`, id)
+                xbot.reply(from, `Wrong Format!\n⚠️ Harap Kirim Gambar Dengan #setgroupicon`, id)
             }
             break
         case '#bugreport':
-            if (args.length === 1) return tobz.reply(from, '[❗] Kirim perintah *#bugreport [teks]*\ncontoh : *#bugreport Permisi Owner, Ada bug pada command #otakudesu, Tolong diperbaiki*')
+            if (args.length === 1) return xbot.reply(from, '[❗] Kirim perintah *#bugreport [teks]*\ncontoh : *#bugreport Permisi Owner, Ada bug pada command #otakudesu, Tolong diperbaiki*')
             const bug = body.slice(11)
             if(!bug) return
             if(isGroupMsg){
-                tobz.sendText(ownerNumber, `*[BUG REPORT]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\nGroup : ${formattedTitle}\n\n${bug}`)
-                tobz.reply(from, 'Masalah telah di laporkan ke owner BOT, laporan palsu/main2 tidak akan ditanggapi.' ,id)
+                xbot.sendText(ownerNumber, `*[BUG REPORT]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\nGroup : ${formattedTitle}\n\n${bug}`)
+                xbot.reply(from, 'Masalah telah di laporkan ke owner BOT, laporan palsu/main2 tidak akan ditanggapi.' ,id)
             }else{
-                tobz.sendText(ownerNumber, `*[BUG REPORT]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\n\n${bug}`)
-                tobz.reply(from, 'Masalah telah di laporkan ke owner BOT, laporan palsu/main2 tidak akan ditanggapi.', id)
+                xbot.sendText(ownerNumber, `*[BUG REPORT]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\n\n${bug}`)
+                xbot.reply(from, 'Masalah telah di laporkan ke owner BOT, laporan palsu/main2 tidak akan ditanggapi.', id)
             }
             break
          case '#profile':
@@ -2793,9 +3276,9 @@ Menunggu video...`
                 if (!quotedMsg) {
                 var block = blockNumber.includes(author)
                 var bend = banned.includes(author)
-                var pic = await tobz.getProfilePicFromServer(author)
+                var pic = await xbot.getProfilePicFromServer(author)
                 var namae = pushname
-                var sts = await tobz.getStatus(author)
+                var sts = await xbot.getStatus(author)
                 var adm = isGroupAdmins
                 var donate = isAdmin
                 const { status } = sts
@@ -2804,14 +3287,14 @@ Menunggu video...`
                 } else {
                     var pfp = pic
                 } 
-                await tobz.sendFileFromUrl(from, pfp, 'pfp.jpg', `*User Profile* ✨️ \n\n➸ *Username: ${namae}*\n\n➸ *User Info: ${status}*\n\n*➸ Block : ${block}*\n\n*➸ Banned : ${bend}*\n\n➸ *Admin Group: ${adm}*\n\n➸ *Admin XBOT: ${donate}*`)
+                await xbot.sendFileFromUrl(from, pfp, 'pfp.jpg', `*User Profile* ✨️ \n\n➸ *Username: ${namae}*\n\n➸ *User Info: ${status}*\n\n*➸ Block : ${block}*\n\n*➸ Banned : ${bend}*\n\n➸ *Admin Group: ${adm}*\n\n➸ *Admin XBOT: ${donate}*`)
              } else if (quotedMsg) {
              var qmid = quotedMsgObj.sender.id
              var block = blockNumber.includes(qmid)
              var bend = banned.includes(author)
-             var pic = await tobz.getProfilePicFromServer(qmid)
+             var pic = await xbot.getProfilePicFromServer(qmid)
              var namae = quotedMsgObj.sender.name
-             var sts = await tobz.getStatus(qmid)
+             var sts = await xbot.getStatus(qmid)
              var adm = isGroupAdmins
              var donate = isAdmin
              const { status } = sts
@@ -2820,81 +3303,245 @@ Menunggu video...`
               } else {
               var pfp = pic
               } 
-              await tobz.sendFileFromUrl(from, pfp, 'pfp.jpg', `*User Profile* ✨️ \n\n➸ *Username: ${namae}*\n\n➸ *User Info: ${status}*\n\n*➸ Block : ${block}*\n\n*➸ Banned : ${bend}*\n\n➸ *Admin Group: ${adm}*\n\n➸ *Admin XBOT: ${donate}*`)
+              await xbot.sendFileFromUrl(from, pfp, 'pfp.jpg', `*User Profile* ✨️ \n\n➸ *Username: ${namae}*\n\n➸ *User Info: ${status}*\n\n*➸ Block : ${block}*\n\n*➸ Banned : ${bend}*\n\n➸ *Admin Group: ${adm}*\n\n➸ *Admin XBOT: ${donate}*`)
              }
             }
             break
+  		case `#getpp`:
+			if (!isGroupMsg) return xbot.reply(from, 'Hanya untuk di grup!.', id)
+				var pik = await xbot.getProfilePicFromServer(mentionedJidList[0])
+				await xbot.sendFileFromUrl(from, pik, 'pik.jpg', 'Nih Kak...', id)
+				break
+  /*      case `#statshp`:
+            const tanda2 = '```'    
+            const isCas = await xbot.getIsPlugged() ? "Charging ⚡" : "Not Charged"
+            const MyPhone = await xbot.getMe()
+            const { battery, plugged, phone } = MyPhone
+            const { wa_version, mcc, mnc, os_version, device_manufacturer, device_model, os_build_number } = phone
+                xbot.reply(from, `${monospace(`
+ ❏ 『 𝐒𝐓𝐀𝐓𝐈𝐒𝐓𝐈𝐊 𝐇𝐏 』
+❍ Baterai : ${battery}%
+❍ Charger : ${isCas}
+❍ V.WhatsApp : ${wa_version}
+❍ MCC : ${mcc}
+❍ MNC : ${mnc}
+❍ Versi OS : ${os_version}
+❍ Merk HP : _${device_manufacturer}_
+❍ Versi HP : _${device_model}_
+`)}`, id)
+            break  
+      case `#statswa`:
+            const loadedMsg = await xbot.getAmountOfLoadedMessages()
+            const chatIds = await xbot.getAllChatIds()
+            const groups = await xbot.getAllGroups()
+            const blok = await xbot.getBlockedIds()
+            const me = await xbot.getMe() 
+                xbot.reply(from, `${monospace(`
+  ❏ 『 𝐌𝐄𝐒𝐒𝐀𝐆𝐄 𝐁𝐎𝐓 』 
+❍ ${loadedMsg} : Pesan Masuk
+❍ ${groups.length} : Pesan Grup
+❍ ${chatIds.length - groups.length} : Chat Pribadi
+❍ ${blok.length} : Kontak Diblokir
+❍ ${chatIds.length} : Jumlah Chat
+`)}`, id)     
+            break
+        case `#statspc`:
+
+            const used = process.memoryUsage()
+            const titit = moment().millisecond()
+                xbot.reply(from, `${monospace(`
+  ❏ 『 𝐒𝐘𝐒𝐓𝐄𝐌 𝐁𝐎𝐓 』
+❍ HOST : ${os.hostname()}
+❍ PLATFORM : ${os.platform()}
+❍ SPEED : ${os.cpus()[0].speed} MHz
+❍ CORE : ${os.cpus().length}
+❍ RAM : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB
+❍ N.Latency : ${titit} Ms
+`)}`, id) 
+            break    */
+        case `#runtime`:
+            function format(seconds){
+            function pad(s){
+            return (s < 10 ? '0' : '') + s;
+            }
+            var hours = Math.floor(seconds / (60*60));
+             var minutes = Math.floor(seconds % (60*60) / 60);
+             var seconds = Math.floor(seconds % 60);
+
+             return pad(hours) + ' Jam,' + pad(minutes) + ' Menit,' + pad(seconds) + ' Detik';
+              }
+
+            var uptime = process.uptime();
+            xbot.reply(from, `Bot telah berjalan selama ${format(uptime)}`, id)
+            break  
+        case `#xvideos`:
+            //if (!isVipUser) return xbot.reply(from, '*Fitur Ini Khusus VIP!*\n _Daftar VIP Hanya 5k/Bulan_\n\n*Mau Daftar VIP?*\nChat Owner BOT\n_wa.me/6281342077268_ ', id)
+            if (!isNsfw) return xbot.reply(from, `command/Perintah NSFW belum di aktifkan di group ini!`, id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis/nJika Ingin Isi Ulang Chat Owner!/nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#xvideos* [ Lagu ]`)
+            const querVID = body.slice(9)
+            xbot.reply(from, mess.wait, id)
+            try {
+                const resvid = await fetch(`https://mnazria.herokuapp.com/api/porn?search=${encodeURIComponent(querVID)}`)
+                if (!resvid.ok) throw new Error(`unexpected response ${resvid.statusText}`)
+                const jsonserxvid = await resvid.json()
+                const { result } = await jsonserxvid
+                let berhitung = 1
+                let xixixi = `*「 XVIDEOS 」*\n\n*Hasil Pencarian : ${querVID}*\n\n─────────────────\n\nKetik #getxvideos [angka] untuk mengambil ID, Contoh : #getxvideos 2\n`
+                for (let i = 0; i < result.length; i++) {
+                    xixixi += `\n─────────────────\n\n*Urutan* : ${berhitung+i}\n*Title* : ${result[i].title}\n*Actors* : ${result[i].actors}\n*Durasi* : ${result[i].duration}\n*Perintah download* : *#getxvideos ${result[i].url}*\n`
+                }
+                    xixixi += `\n\n`
+                for (let ii = 0; ii < result.length; ii++) {
+                    xixixi += `(#)${result[ii].url}`
+                }
+                await xbot.sendFileFromUrl(from, result[0].image, 'thumbxvid.jpg', xixixi, id)
+                await limitAdd(serial)
+            } catch (err){
+                console.log(err)
+                xbot.sendFileFromUrl(from, errorurl, 'error.png', '💔️ Maaf, Xvideos tidak ditemukan')
+                xbot.sendText(ownerNumber, 'Xvideos Error : ' + err)
+            }
+            break
+        case `#getxvideos`:
+      //      if (!isAdmin) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Admin XBOT!`, id)
+            if (!isNsfw) return xbot.reply(from, `command/Perintah NSFW belum di aktifkan di group ini!`, id)
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis/nJika Ingin Isi Ulang Chat Owner!/nKetik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            try {
+                if (quotedMsg && quotedMsg.type == 'image') {
+                    if (args.length === 1) return xbot.reply(from, `Kirim perintah *#getxvideos [ Id Download ]*, untuk contoh silahkan kirim perintah *#readme*`)
+                    if (!Number(args[1])) return xbot.reply(from, `*Apabila ditag hanya cantumkan nomer urutan bukan ID Download!*\nContoh : *#getxvideos 1*`, id)
+                    const datavideo = quotedMsg.type == 'chat' ? quotedMsg.body : quotedMsg.type == 'image' ? quotedMsg.caption : ''
+                    const pilur = datavideo.split('(#)')
+                    console.log(pilur[args[1]])
+                    xbot.reply(from, mess.wait, id)
+                    const vidxvid = await fetch(`https://mnazria.herokuapp.com/api/porndownloadxvideos?url=${pilur[args[1]]}`)
+                    if (!vidxvid.ok) throw new Error(`Error Get Video : ${vidxvid.statusText}`)
+                    const vidxvideo = await vidxvid.json()
+                     if (vidxvideo.status == false) {
+                        xbot.reply(from, `*Maaf Terdapat kesalahan saat mengambil data, mohon pilih media lain...*`, id)
+                    } else {
+                        try{
+                        const { mp4 } = await vidxvideo
+                        const shortvidxv = await urlShortener(mp4)
+                        const captions = `*「 XVIDEOS DOWNLOADER 」*\n\n*Website* : XVideos\n*Ext* : MP3\n\n*Silahkan download file media sedang melalui link yang tersedia.*\n${shortvidxv}`
+                        xbot.sendFileFromUrl(from, `https://sensorstechforum.com/wp-content/uploads/2019/07/xvideos-virus-image-sensorstechforum-com.jpg`, ``, captions, id)
+                        // await xbot.sendFileFromUrl(from, result, `${title}.mp3`, `XVIDEOS BY xbot`, id).catch(() => xbot.reply(from, mess.error.Yt4, id))
+                        await limitAdd(serial)
+                        } catch (err){
+                            console.log(err)
+                        }
+                    }    
+                } else if (quotedMsg && quotedMsg.type == 'chat') { 
+                    xbot.reply(from, `*Salah tag! hanya tag pesan berisi data hasil dari penelusuran videp.*`, id)
+                } else {
+                    if (args.length === 1) return xbot.reply(from, `Kirim perintah *#getxvideos [ Id Download ]*, untuk contoh silahkan kirim perintah *.readme*`)
+                    if (args[1] <= 25) return xbot.reply(from, `*Apabila ingin mengambil data video dengan nomor urutan, mohon tag pesan bot tentang pencarian videp!*`,)
+                    xbot.reply(from, mess.wait, id)
+                    const getvide = await get.get(`https://mnazria.herokuapp.com/api/porndownloadxvideos?url=${pilur[args[1]]}`).json
+                    if (getvide.error) {
+                        xbot.reply(from, getvide.error, id)
+                    } else {
+                        const { mp4 } = await mhankyt35
+                        const shortvidxv2 = await urlShortener(mp4)
+                        console.log(`CHANGE API BARBAR : ${ext}\n${filesize}\n${status}`)
+                        const captions = `*「 XVIDEOS DOWNLOADER 」*\n\n*Website* : XVideos\n\n*Ext* : MP4\n*Link* : ${shortvidxv2}\n*Silahkan tunggu file media sedang dikirim mungkin butuh beberapa menit*`
+                        xbot.sendFileFromUrl(from, `https://sensorstechforum.com/wp-content/uploads/2019/07/xvideos-virus-image-sensorstechforum-com.jpg`, ``, captions, id)
+                        // await xbot.sendFileFromUrl(from, result, `${title}.mp3`, `Music telah terkirim ${pushname}`, id).catch(() => xbot.reply(from, mess.error.Yt4, id))
+                        await limitAdd(serial)
+                   }
+                }
+            } catch (err) {
+                xbot.sendText(ownerNumber, 'Error XVideos : '+ err)
+                xbot.reply(from, `*Kesalahan! Pastikan id download sudah benar.*`, id)
+                console.log(err)
+            }
+            break
+case `#edotensei`:
+			if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+            if (!isGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan oleh admin group', id)
+            if (!isBotGroupAdmins) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan ketika menjadi admin!', id)	
+			if (mentionedJidList.length === 0) return xbot.reply(from, `Untuk menggunakan Perintah ini, kirim perintah *#edotensei* @tagmember`, id)
+            //const org = args[1]
+			await xbot.sendText(from, `Siap kak, mengeluarkan:\n${mentionedJidList.join('\n')}`)
+            for (let i = 0; i < mentionedJidList.length; i++) {
+                if ((adminNumber, ownerNumber).includes(mentionedJidList[i])) return xbot.reply(from, mess.error.Sp, id)
+                await xbot.removeParticipant(groupId, mentionedJidList[i])
+                await sleep(10000)
+				await xbot.addParticipant(from, mentionedJidList[i])
+            /*} catch {
+                xbot.reply(from, mess.error.Ad, id)*/
+            }
+			break
         // LIST MENU
         case '#menu':
         case '#help':
-            tobz.sendText(from, help)
+            xbot.sendText(from, help)
             break
         case '#xbotgroup':
-            tobz.reply(from, `Link Group XBOT : https://chat.whatsapp.com/J3LHFRxkSLf7VakvKDwfBj\nJangan Lupa Join Ya Kak ${pushname}`, id)
+            xbot.reply(from, `Link Group XBOT : https://chat.whatsapp.com/J3LHFRxkSLf7VakvKDwfBj\nJangan Lupa Join Ya Kak ${pushname}`, id)
             break
         case '#groupmenu':
-            tobz.sendText(from, groupcmd)
+            xbot.sendText(from, groupcmd)
             break
         case '#mediamenu':
-            tobz.sendText(from, mediacmd)
+            xbot.sendText(from, mediacmd)
             break
         case '#animemenu':
-            tobz.sendText(from, animecmd)
+            xbot.sendText(from, animecmd)
             break
         case '#kerangmenu':
-            tobz.sendText(from, kerangcmd)
+            xbot.sendText(from, kerangcmd)
             break
         case '#downloadmenu':
-            tobz.sendText(from, downloadcmd)
+            xbot.sendText(from, downloadcmd)
             break
         case '#othermenu':
-            tobz.sendText(from, othercmd)
+            xbot.sendText(from, othercmd)
             break
         case '#iklan':
-            tobz.sendText(from, sewa)
+            xbot.sendText(from, sewa)
             break
         case '#adminmenu':
-            if (!isAdmin) return tobz.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
-            tobz.sendText(from, admincmd)
+            if (!isAdmin) return xbot.reply(from, 'Perintah ini hanya untuk Admin XBOT', id)
+            xbot.sendText(from, admincmd)
             break
         case '#ownermenu':
-            if (!isOwner) return tobz.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
-            tobz.sendText(from, ownercmd)
+            if (!isOwner) return xbot.reply(from, 'Perintah ini hanya untuk Owner XBOT', id)
+            xbot.sendText(from, ownercmd)
             break
         case '#praymenu':
-            tobz.reply(from, praycmd)
+            xbot.reply(from, praycmd)
             break
         case '#nsfwmenu':
-            if (!isGroupMsg) return tobz.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (!isNsfw) return tobz.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
-            tobz.sendText(from, nsfwcmd)
+            if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+            if (!isNsfw) return xbot.reply(from, 'command/Perintah NSFW belum di aktifkan di group ini!', id)
+            xbot.sendText(from, nsfwcmd)
             break
         // INFORMATION
         case '#donate':
-            tobz.sendText(from, sumbang)
+            xbot.sendText(from, sumbang)
             break
         case '#readme':
-            tobz.reply(from, readme, id)
+            xbot.reply(from, readme, id)
             break
         case '#info':
-            tobz.sendText(from, info)
+            xbot.sendText(from, info)
             break
         case '#bahasa':
-            tobz.sendText(from, bahasalist)
+            xbot.sendText(from, bahasalist)
             break
         case '#snk':
-            tobz.reply(from, snk, id)
+            xbot.reply(from, snk, id)
             break
         default:
-            if (!isGroupMsg) return tobz.reply(from, 'Jika Ingin Menggunakan Bot Harap Masuk Ke Dalam Grup XBOT, Link Ada Di Bio atau Bisa Mengetik #xbotgroup!\nJika Ingin Sewa Bot atau Bikin Bot Harap Ketik *#iklan*', id)
-            if (command.startsWith('#')) {
-                tobz.reply(from, `Maaf ${pushname}, Command *${args[0]}* Tidak Terdaftar Di Dalam *#menu*!`, id)
-            }
-            await tobz.sendSeen(from) 
+            await xbot.sendSeen(from) 
             }
         }
     } catch (err) {
         console.log(color('[ERROR]', 'red'), err)
-        //tobz.kill().then(a => console.log(a))
+        //xbot.kill().then(a => console.log(a))
     }
 }
