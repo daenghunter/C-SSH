@@ -1,0 +1,7 @@
+case 'spam':
+       if(!isOwner) return xbot.reply(from, 'Are you crazy >.<', message.id)
+      sperm = body.trim().split('|')
+      for (Let i =; i < sperm[1]; i++) {
+       xbot.reply(message.from, `${sperm[2]}`, message.id)
+ }
+break
