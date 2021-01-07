@@ -1,7 +1,7 @@
-        case '#alok': {
+        case '#kelly': {
 
-             const alok = body.slice(5)
-              if (!alok) return xbot.reply(from, 'Kirim perintah *#alok [text]*\n\nContoh : #alok XBOT', id)
+             const kelly = body.slice(6)
+              if (!kelly) return xbot.reply(from, 'Kirim perintah *#kelly [text]*\n\nContoh : #kelly XBOT', id)
                xbot.reply(from, mess.wait, id)
              const puppeteer = require('puppeteer')
                 try {
@@ -15,8 +15,8 @@
                   waitUntil: "networkidle2"
                             })
                 .then(async () => {
-                   await page.type("#text-0", alok);
-                    await page.click("#radio0-radio-128c11e9903a46c8920f545e8c5dcf44");
+                   await page.type("#text-0", kelly);
+                    await page.click("#radio0-radio-1a43cd83a8134efb94975abe02641852");
                      await new Promise(resolve => setTimeout(resolve, 5000));
                        await page.click("#submit");
                        await new Promise(resolve => setTimeout(resolve, 5000));
