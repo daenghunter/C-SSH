@@ -1,7 +1,7 @@
-        case '#hayato': {
+        case '#pubg': {
 
-             const hayato = body.slice(7)
-              if (!hayato) return xbot.reply(from, 'Kirim perintah *#hayato [text]*\n\nContoh : #hayato XBOT', id)
+             const pubg = body.slice(5)
+              if (!pubg) return xbot.reply(from, 'Kirim perintah *#pubg [text]*\n\nContoh : #pubg XBOT', id)
                xbot.reply(from, mess.wait, id)
              const puppeteer = require('puppeteer')
                 try {
@@ -11,12 +11,12 @@
                                 });
             const page = await browser.newPage();
                await page
-                    .goto("https://en.ephoto360.com/create-free-fire-facebook-cover-online-567.html", {
+                    .goto("https://en.ephoto360.com/free-pubg-logo-maker-online-609.html", {
                   waitUntil: "networkidle2"
                             })
                 .then(async () => {
-                   await page.type("#text-0", hayato);
-                    await page.click("#radio0-radio-1f618436252b4561b3f04d209ec0e1a2");
+                   await page.type("#text-0", pubg);
+                    await page.click("#radio0-radio-c87fef3f338741be9153ad59020d1647");
                      await new Promise(resolve => setTimeout(resolve, 5000));
                        await page.click("#submit");
                        await new Promise(resolve => setTimeout(resolve, 5000));
