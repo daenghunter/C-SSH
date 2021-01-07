@@ -1,7 +1,7 @@
-        case '#navy': {
+        case '#alok': {
 
-             const navy = body.slice(5)
-              if (!navy) return xbot.reply(from, 'Kirim perintah *#navy [text]*\n\nContoh : #navy XBOT', id)
+             const alok = body.slice(5)
+              if (!alok) return xbot.reply(from, 'Kirim perintah *#alok [text]*\n\nContoh : #alok XBOT', id)
                xbot.reply(from, mess.wait, id)
              const puppeteer = require('puppeteer')
                 try {
@@ -11,12 +11,12 @@
                                 });
             const page = await browser.newPage();
                await page
-                    .goto("https://en.ephoto360.com/make-avatar-style-crossfire-282.html", {
+                    .goto("https://en.ephoto360.com/create-free-fire-facebook-cover-online-567.html", {
                   waitUntil: "networkidle2"
                             })
                 .then(async () => {
-                   await page.type("#text-0", navy);
-                    await page.click("#radio0-radio-fvcwknv5l");
+                   await page.type("#text-0", alok);
+                    await page.click("#radio0-radio-128c11e9903a46c8920f545e8c5dcf44");
                      await new Promise(resolve => setTimeout(resolve, 5000));
                        await page.click("#submit");
                        await new Promise(resolve => setTimeout(resolve, 5000));
