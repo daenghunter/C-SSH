@@ -1,8 +1,8 @@
-        case '#metal': {
+        case '#navy': {
 
-             const metal = body.slice(6)
-              if (!metal) return geps.reply(from, 'Kirim perintah *#metal [text]*\n\nContoh : #metal XBOT', id)
-               geps.reply(from, mess.wait, id)
+             const navy = body.slice(5)
+              if (!navy) return xbot.reply(from, 'Kirim perintah *#navy [text]*\n\nContoh : #navy XBOT', id)
+               xbot.reply(from, mess.wait, id)
              const puppeteer = require('puppeteer')
                 try {
                  (async () => {
@@ -11,12 +11,12 @@
                                 });
             const page = await browser.newPage();
                await page
-                    .goto("https://en.ephoto360.com/metal-text-effect-blue-174.html", {
+                    .goto("https://en.ephoto360.com/make-avatar-style-crossfire-282.html", {
                   waitUntil: "networkidle2"
                             })
                 .then(async () => {
-                   await page.type("#text-0", metal);
-                    await page.click("#radio0-radio-7e8d1d6b1b72481abc38a9d26513a803");
+                   await page.type("#text-0", navy);
+                    await page.click("#radio0-radio-fvcwknv5l");
                      await new Promise(resolve => setTimeout(resolve, 5000));
                        await page.click("#submit");
                        await new Promise(resolve => setTimeout(resolve, 5000));
@@ -24,18 +24,18 @@
                                     'div[class="btn-group"] > a'
                                     );
                   const text = await (await element.getProperty("href")).jsonValue();
-                                    geps.sendFileFromUrl(from, text, id)
+                                    xbot.sendFileFromUrl(from, text, id)
                                     browser.close();
                                                                                 
                                     })
                                     .catch((err => {
                                     console.log(err)
-                                    geps.reply(from, 'error', id)
+                                    xbot.reply(from, 'error', id)
                                     }))
                                     })();
                                     } catch (error) {
                                     console.log('error bang')
-                                    geps.reply(from, 'error', id)
+                                    xbot.reply(from, 'error', id)
                                     }
                                     }
                                     break
