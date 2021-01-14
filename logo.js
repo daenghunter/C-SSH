@@ -21,6 +21,8 @@ function help() {
 
 ╭────「 *XBOT UPDATE* 」──
 │🔸 ${wkwk}#play${wkwk} *Song*
+│🔸 ${wkwk}#play2${wkwk} *Song*
+│🔸 ${wkwk}#play3${wkwk} *Song*
 │🔸 ${wkwk}#joox${wkwk} *Song*
 │🔸 ${wkwk}#ytmp3${wkwk} *Link Youtube*
 │🔸 ${wkwk}#ytmp4${wkwk} *Link Youtube*
