@@ -53,6 +53,17 @@ function help() {
 │🔸 ${wkwk}#rate${wkwk}  *text*
 ╰────────────────────
 
+╭────「 *MENU GABUT* 」──
+│🔸 ${wkwk}#puisi${wkwk} 
+│🔸 ${wkwk}#puisi2${wkwk} 
+│🔸 ${wkwk}#puisi3${wkwk} 
+│🔸 ${wkwk}#cersex1${wkwk} 
+│🔸 ${wkwk}#cersex2${wkwk} 
+│🔸 ${wkwk}#indohot${wkwk} 
+│🔸 ${wkwk}#mock${wkwk} *<text>*
+│🔸 ${wkwk}#hilih${wkwk}  *<text>*
+╰────────────────────
+
 ╭────「 *GROUP MENU* 」──
 │🔸 ${wkwk}#snk${wkwk} 
 │🔸 ${wkwk}#groupinfo${wkwk} 
