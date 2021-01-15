@@ -1,40 +1,43 @@
-case '#play2':
-       xbot.reply(from,'Wait.. Sedang di proses!',id)
-	const getvids = await axios.get(`https://api.zeks.xyz/api/ytplaymp3?q=${body.slice(6)}&apikey=apivinz`)
-	if (getvids.data.status == false) return xbot.reply(from, getvids.data.message, id)
-    if (Number(getvids.data.result.url_audio.split(' MB')[0]) >= 20.00) return xbot.reply(from, 'Maaf durasi music sudah melebihi batas maksimal 10 MB!', id)
-    const responses = await fetch(getvids.data.result.url_audio);
-    const buffer = await responses.buffer(); 
-	await xbot.sendFileFromUrl(from, getvids.data.result.thumbnail, 'gambar.jpg', `Title: ${getvids.data.result.title}\nSize: ${getvids.data.result.size}`, id)
-    await fs.writeFile(`./media/play.mp3`, buffer)
-    await xbot.sendFile(from,'./media/play.mp3', `p`,id)
-    await limitAdd(serial)
-        break
-       case '#play3':          
-	   //if (!isOwner) return xbot.reply(from,'FITUR DI MATIKAN SEMENTARA',id)
-            if (args.length == 1) return xbot.reply(from, `Untuk mencari lagu from youtube\n\nPenggunaan: #play judul lagu`, id)
-            try {
-                xbot.reply(from,'Wait.. Sedang di proses, Memakan 2 Limit!!',id)
-                const serplay = body.slice(6)
-                const webplay = await fetch(`https://api.vhtear.com/ytmp3?query=${serplay}&apikey=${vhtearkey}`)
-                if (!webplay.ok) throw new Error(`Error Get Video : ${webplay.statusText}`)
-                const webplay2 = await webplay.json()
-                 if (webplay2.status == false) {
-                    xbot.reply(from, `*Maaf Terdapat kesalahan saat mengambil data, mohon pilih media lain...*`, id)
-                } else {
-                    if (Number(webplay2.result.size.split(' MB')[0]) >= 20.00) return xbot.reply(from, 'Maaf durasi music sudah melebihi batas maksimal 10 MB!', id)
-                    const { image, mp3, size, ext, title, duration } = await webplay2.result
-                    const captplay = `「 PLAY 」\n\n➸ Judul : ${title}\n➸ Durasi : ${duration}\n➸ Filesize : ${size}\n➸ Exp : ${ext}\n➸ Link Download : ${mp3}\n\nMusic Sedang Dikirim`
-					const responses = await fetch(mp3);
-                    const buffer = await responses.buffer();   
-                    xbot.sendFileFromUrl(from, image, `thumb.jpg`, captplay, id)
-                    await fs.writeFile(`./media/audio.mp3`, buffer)
-	                await xbot.sendFile(from,'./media/audio.mp3', `p`,id)
-                    await limitAdd(serial)
-                    await limitAdd(serial)
-                }
-            } catch (err) {
-                xbot.sendText(ownerNumber, 'Error Play : '+ err)
-                xbot.reply(from, mess.error.Yt3, id)
+// Credit SlavyanDesu <--- stoopid
+            // Note this only work if you have libwebp installed!
+            // And I know the code is messy ok don't bully me :))))
+        case '#stickerwm':
+        case '#stikerwm':
+            if (!isAdmin) return await xbot.reply(from, `Fitur ini hanya untuk user Premium\n\nKetik #owner\n untuk menyewa bot ini ke grup anda.`, id)
+            if (!q.includes('|')) return await xbot.reply(from, `Untuk membuat Sticker dengan watermark\nsilahkan upload foto atau reply foto dengan perintah #stickerwm packagename | author\n\nContoh: #stickerwm 2020 | XBOT`, id)
+            if (isMedia && isImage || isQuotedImage) {
+            await xbot.reply(from, _Permintaan anda sedang di proses_!, id)
+            const packname = q.substring(0, q.indexOf('|') - 1)
+            const author = q.substring(q.lastIndexOf('|') + 2)
+            exif.create(packname, author)
+            const encryptMedia = isQuotedImage ? quotedMsg : message
+            const mediaData = await decryptMedia(encryptMedia, uaOverride)
+            webp.buffer2webpbuffer(mediaData, 'jpg', '-q 80')
+                .then(async (res) => {
+                    fs.writeFileSync(`./temp/stickerwm/stage_${sender.id}.webp`, res)
+                    await exec(`webpmux -set exif ./temp/stickerwm/data.exif ./temp/stickerwm/stage_${sender.id}.webp -o ./temp/stickerwm/${sender.id}.webp`, { log: true })
+                    if (fs.existsSync(`./temp/stickerwm/${sender.id}.webp`)) {
+                        fs.readFile(`./temp/stickerwm/${sender.id}.webp`, (err, data) => {
+                            if (err) return console.error(err)
+                                sharp(data)
+                                    .resize(256, 256)
+                                    .toFile(`./temp/stickerwm/stage_${sender.id}.webp`, async (err) => {
+                                        if (err) return console.error(err)
+                                        const data = fs.readFileSync(`./temp/stickerwm/${sender.id}.webp`)
+                                        const base64 = `data:image/webp;base64,${data.toString('base64')}`
+                                        await xbot.sendRawWebpAsSticker(from, base64)
+                                        fs.unlinkSync(`./temp/stickerwm/stage_${sender.id}.webp`)
+                                        fs.unlinkSync(`./temp/stickerwm/${sender.id}.webp`)
+                                        fs.unlinkSync('./temp/stickerwm/data.exif')
+                                    })
+                        })
+                    }
+                })
+                .catch(async (err) => {
+                    console.error(err)
+                    await xbot.reply(from, 'Error!', id)
+                })
+            } else {
+                await xbot.reply(from, Format Yang Anda Masukkan Salah !, id)
             }
-            break
+    break
