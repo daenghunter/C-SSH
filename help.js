@@ -12,6 +12,7 @@ function help() {
 ╭────「 *MENU UTAMA* 」──
 │🔸 ${wkwk}#limit${wkwk}
 │🔸 ${wkwk}#sewa${wkwk}
+│🔸 ${wkwk}#toadmin${wkwk} *Pesan Anda*
 │🔸 ${wkwk}#ping${wkwk}
 │🔸 ${wkwk}#listblock${wkwk}
 │🔸 ${wkwk}#listbanned${wkwk}
