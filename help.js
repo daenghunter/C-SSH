@@ -27,6 +27,8 @@ function help() {
 │🔸 ${wkwk}#ytmp4${wkwk} *Link Youtube*
 │🔸 ${wkwk}#nulis${wkwk} *<text>*
 │🔸 ${wkwk}#nulis2${wkwk} *<text>*
+│🔸 ${wkwk}#cekresi${wkwk} *NoResi* *Kurir*
+│🔸 ${wkwk}#cekongkir${wkwk} *|Kurir|Dari|Tujuan*
 ╰────────────────────
 
 ╭────「 *TEXT MAKER* 」──
@@ -94,7 +96,8 @@ function help() {
 │🔸 ${wkwk}#ban${wkwk}  *@tagmember*
 │🔸 ${wkwk}#unban${wkwk}  *@tagmember*
 │🔸 ${wkwk}#edotensei${wkwk}  *@tagmember*
-│🔸 ${wkwk}#ban${wkwk}  *@tagmember*
+│🔸 ${wkwk}#stikerwa${wkwk}  *Name*
+│🔸 ${wkwk}#esticker${wkwk}  *Emoticon*
 │🔸 ${wkwk}tendang${wkwk}  *ReplyMsg*
 │🔸 ${wkwk}balik${wkwk}  *ReplyMsg*
 ╰────────────────────
