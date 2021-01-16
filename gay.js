@@ -3424,6 +3424,19 @@ case `#nyimak`:
                 xbot.reply(from, 'Masalah telah di laporkan ke owner BOT, laporan palsu/main2 tidak akan ditanggapi.', id)
             }
             break
+        case '#toadmin':
+            if (args.length === 1) return xbot.reply(from, '[❗] Kirim perintah *#toadmin [teks]*\ncontoh : *#toadmin Hai admin, saya ingin menyewa bot anda.')
+            const bug = body.slice(11)
+            if(!bug) return
+            if(isGroupMsg){
+                xbot.sendText(ownerNumber, `*[NEW MESSAGE]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\nGroup : ${formattedTitle}\n\n${bug}`)
+                xbot.reply(from, 'Pesan anda telah terkirim ke owner bot, silahkan menunggu sampai owner membalas pesan anda.' ,id)
+            }else{
+                xbot.sendText(ownerNumber, `*[ NEW MESSAGE ]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\n\n${bug}`)
+                xbot.reply(from, 'Pesan anda telah terkirim ke owner bot, silahkan menunggu sampai owner membalas pesan anda.', id)
+            }
+            break
+
          case '#profile':
             if (isBanned, isBlocked) return false
             if (isGroupMsg) {
