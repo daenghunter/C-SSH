@@ -1474,7 +1474,7 @@ ${desc}`)
             if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group', id)
 
 		if (args.length == 0) return xbot.reply(from, `Untuk mengetahui seberapa gay seseorang gunakan #howgay namanya\n\nContoh: #howgay Nazaar`, id)
-            fetch('https://github.com/xPenz69/HowGay-Lesbi/blob/main/gay.txt')
+            fetch('https://raw.githubusercontent.com/xPenz69/HowGay-Lesbi/main/gay.txt')
             .then(res => res.text())
             .then(body => {
                 let splithowgay = body.split('\n')
