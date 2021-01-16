@@ -1288,6 +1288,23 @@ ${desc}`)
              await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan')
            }
           break
+		  case '#cekresi':     
+        if (args.length === 1) return xbot.reply(from, 'salah! ketik #cekresi [nomor resi] [nama kurir]\nContoh: #cekresi JP0177687883 jnt', id)
+        if (isLimit(serial)) return
+        xbot.reply(from, mess.wait, id)
+                var gntd = await axios.get(`https://api.vhtear.com/cekresi?resi=${args[1]}&kurir=${args[2]}&apikey=${vhtearkey}`)
+                var gentod = gntd.data.result
+                if (gentod.status.code !== 200) return xbot.reply(from, 'Upss terjadi kesalahan, pastikan data yang kamu kirimkan benar', id)
+                let gindtod = `Info untuk Resi *${args[1]}*\n\n*Status*: ${gentod.result.summary.status}\n*WayBill Date*: ${gentod.result.details.waybill_date}\n*Status Pengiriman*:\n\n`
+                var camtol = gentod.result.manifest
+				for (let i = 0; i < camtol.length; i++) {
+                    gindtod += `*City* : ${camtol[i].city_name}\n*Deskripsi* : ${camtol[i].manifest_description}\n*Tanggal*: ${camtol[i].manifest_date}\n\n`
+                }
+                await xbot.reply(from, gindtod, id)
+
+        await limitAdd(serial)             
+        break
+
         // PRAY //
         case '#jadwalshalat':
         case '#jadwalsholat':
