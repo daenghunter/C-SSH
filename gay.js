@@ -1288,6 +1288,28 @@ ${desc}`)
              await xbot.sendFileFromUrl(from, errorurl2, 'error.png', '💔️ Maaf, Anime tidak ditemukan')
            }
           break
+   case '#cekongkir':
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#cekongkir [ |kurir|dari|tujuan ]*, contoh *#cekongkir |jne|dumai|pekanbaru*`, id)
+            await limitAdd(serial)
+            xbot.reply(from, mess.wait, id)
+            argz = body.trim().split('|')
+            try {
+                const kumri = argz[1]
+                const formq = argz[2]
+                const toq = argz[3]
+                const dataplai = await axios.get(`https://api.vhtear.com/cekongkir?kurir=${kumri}&fromcity=${formq}&tocity=${toq}&apikey=${vhtearkey}`)
+                const dataplay = dataplai.data.result
+                 let haseel = `*pengiriman* = ${dataplay.title}\n*info* = ${dataplay.informasi}\n`
+                for (let i = 0; i < dataplay.data.length; i++) {
+                    haseel += `*perkiraan* : ${dataplay.data[i].etd}\n*tipe layanan* : ${dataplay.data[i].layanan}\n*tarif* : ${dataplay.data[i].tarif}\n`
+                }
+                await xbot.reply(from, haseel, id)
+            }   catch (err){
+                console.log(err)
+            }
+            break
+
 		  case '#cekresi':     
         if (args.length === 1) return xbot.reply(from, 'salah! ketik #cekresi [nomor resi] [nama kurir]\nContoh: #cekresi JP0177687883 jnt', id)
         if (isLimit(serial)) return
