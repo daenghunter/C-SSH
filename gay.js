@@ -1,5 +1,3 @@
-require('dotenv').config()
-const { decryptMedia } = require('@open-wa/wa-decrypt')
 const fs = require('fs-extra')
 const ffmpeg = require('fluent-ffmpeg')
 const axios = require('axios')
@@ -4764,6 +4762,14 @@ case '#matrix': {
                 xbot.reply(from, hasil, id)
             })
             break
+	case '#randomquran':
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+			   xbot.reply(dari, mess.wait, id)
+			   const quran = await fetch(`https://api-zeks.xyz/api/randomquran`)
+			   const qrn = await quran.json()
+			   xbot.reply(dari, `• *Nama Surah* : ${qrn.result.nama} \n• *Arti* : ${qrn.result.arti} \n• *Asma* : ${qrn.result.asma} \n• *Ayat* : ${qrn.result.ayat} \n• *Keterangan* : ${qrn.result.keterangan} \n• *Dari* : ${qrn.result.type} \n• *Urutan* : ${qrn.result.urut} \n• *Nomor* : ${qrn.result.nomor} \n• *Audio* : ${qrn.result.audio}`, id)
+			   break
+
         // LIST MENU
         case '#menu':
         case '#help':
