@@ -1,3 +1,5 @@
+require('dotenv').config()
+const { decryptMedia } = require('@open-wa/wa-decrypt')
 const fs = require('fs-extra')
 const ffmpeg = require('fluent-ffmpeg')
 const axios = require('axios')
@@ -3424,13 +3426,13 @@ case `#nyimak`:
             break
         case '#toadmin':
             if (args.length === 1) return xbot.reply(from, '[❗] Kirim perintah *#toadmin [teks]*\ncontoh : *#toadmin Hai admin, saya ingin menyewa bot anda.')
-            const bug = body.slice(11)
-            if(!bug) return
+            const bjir = body.slice(11)
+            if(!bjir) return
             if(isGroupMsg){
-                xbot.sendText(ownerNumber, `*[NEW MESSAGE]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\nGroup : ${formattedTitle}\n\n${bug}`)
+                xbot.sendText(ownerNumber, `*[NEW MESSAGE]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\nGroup : ${formattedTitle}\n\n${bjir}`)
                 xbot.reply(from, 'Pesan anda telah terkirim ke owner bot, silahkan menunggu sampai owner membalas pesan anda.' ,id)
             }else{
-                xbot.sendText(ownerNumber, `*[ NEW MESSAGE ]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\n\n${bug}`)
+                xbot.sendText(ownerNumber, `*[ NEW MESSAGE ]*\n*WAKTU* : ${time}\nNO PENGIRIM : wa.me/${sender.id.match(/\d+/g)}\n\n${bjir}`)
                 xbot.reply(from, 'Pesan anda telah terkirim ke owner bot, silahkan menunggu sampai owner membalas pesan anda.', id)
             }
             break
@@ -4762,14 +4764,19 @@ case '#matrix': {
                 xbot.reply(from, hasil, id)
             })
             break
-	case '#randomquran':
-            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
-			   xbot.reply(dari, mess.wait, id)
-			   const quran = await fetch(`https://api-zeks.xyz/api/randomquran`)
-			   const qrn = await quran.json()
-			   xbot.reply(dari, `• *Nama Surah* : ${qrn.result.nama} \n• *Arti* : ${qrn.result.arti} \n• *Asma* : ${qrn.result.asma} \n• *Ayat* : ${qrn.result.ayat} \n• *Keterangan* : ${qrn.result.keterangan} \n• *Dari* : ${qrn.result.type} \n• *Urutan* : ${qrn.result.urut} \n• *Nomor* : ${qrn.result.nomor} \n• *Audio* : ${qrn.result.audio}`, id)
-			   break
+case '#email':
 
+            if (!isGroupMsg) return xbot.reply(from, `Perintah ini hanya bisa di gunakan dalam group!`, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            const readcuys = body.slice(7)
+            const email = readcuys.split('|')[0]
+            const subjek = readcuys.split('|')[1]
+            const pesan = readcuys.split('|')[2]
+            const spamEmail = await axios.get(`https://videfikri.com/api/spamemail?email=${email}&subjek=${subjek}&pesan=${pesan}`)
+            if (spamEmail.data.result.status == 204) return xbot.reply(from, spamEmail.data.result.logs, id)
+            xbot.reply(from, spamEmail.data.result.log_lengkap, id)
+            await limitAdd(serial)
+            break
         // LIST MENU
         case '#menu':
         case '#help':
@@ -4777,27 +4784,7 @@ case '#matrix': {
             break
         case '#xbotgroup':
             xbot.reply(from, `Link Group XBOT : https://chat.whatsapp.com/J3LHFRxkSLf7VakvKDwfBj\nJangan Lupa Join Ya Kak ${pushname}`, id)
-            break
-        case '#groupmenu':
-            xbot.sendText(from, groupcmd)
-            break
-        case '#mediamenu':
-            xbot.sendText(from, mediacmd)
-            break
-        case '#animemenu':
-            xbot.sendText(from, animecmd)
-            break
-        case '#kerangmenu':
-            xbot.sendText(from, kerangcmd)
-            break
-        case '#downloadmenu':
-            xbot.sendText(from, downloadcmd)
-            break
-        case '#othermenu':
-            xbot.sendText(from, othercmd)
-            break
-        case '#iklan':
-            xbot.sendText(from, sewa)
+ 
             break
         case '#sewa':
              xbot.reply(from, 'Jika anda ingin menyewa bot ini, silahkan hubungi owner bot. balas #owner untuk mendapatkan kontaknya.!', id)
