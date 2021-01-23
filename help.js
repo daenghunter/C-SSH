@@ -30,9 +30,11 @@ function help() {
 │🔸 ${wkwk}#nulis2${wkwk} *<text>*
 │🔸 ${wkwk}#cekresi${wkwk} *NoResi* *Kurir*
 │🔸 ${wkwk}#cekongkir${wkwk} *|Kurir|Dari|Tujuan*
+│🔸 ${wkwk}#email${wkwk} *YourEmail*|*Subject*|*Message*
 ╰────────────────────
 
 ╭────「 *TEXT MAKER* 」──
+│🔸 ${wkwk}#logoapi${wkwk} *<text>*
 │🔸 ${wkwk}#silktext${wkwk} *<text>*
 │🔸 ${wkwk}#tahta${wkwk} *<text>*
 │🔸 ${wkwk}#bpink${wkwk} *<text>*
