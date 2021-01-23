@@ -2590,6 +2590,19 @@ Menunggu video...`
              await xbot.sendFileFromUrl(from, `https://api.vhtear.com/hartatahta?text=${ttahta}&apikey=${vhtearkey}`, `harta-tahta-${ttahta}.jpg`, `Nih...`, id)
              limitAdd(serial)
                 break
+       case '#logoapi':
+            if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
+
+           // // //  if (!isPremium) return xbot.reply(from, `Perintah ini hanya bisa di gunakan oleh Member Premium!`, id)
+             xbot.reply(from, mess.wait, id)
+            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+            await limitAdd(serial)        
+             const firecok = body.slice(9)
+             if (!firecok) return xbot.reply(from, 'Masukin nama mu beb!\nMax 8 huruf biar bagus!', id)
+             if (firecok.length > 8) return xbot.reply(from, 'Hurufnya terlalu panjang sayang😔', id)
+             await xbot.sendFileFromUrl(from, `https://api.vhtear.com/fire_maker?text=${firecok}&apikey=${vhtearkey}`, `Kebakaran-${firecok}.jpg`, `Nih...`, id)
+             limitAdd(serial)
+                break
        case '#silkteks':
 	   case '#silktext':
             if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa di gunakan dalam group', id)
