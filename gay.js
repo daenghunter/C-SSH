@@ -104,7 +104,28 @@ const muted = JSON.parse(fs.readFileSync('./lib/database/muted.json'))
 const setting = JSON.parse(fs.readFileSync('./lib/database/setting.json'))
 const msgLimit = JSON.parse(fs.readFileSync('./lib/database/msgLimit.json'))
 const adminNumber = JSON.parse(fs.readFileSync('./lib/database/admin.json'))
-
+const sotoy = [
+		'🍊 : 🍒 : 🍐',
+		'🍒 : 🔔 : 🍊',
+		'🍇 : 🍒 : 🍐',
+		'🍊 : 🍋 : 🔔',
+		'🔔 : 🍒 : 🍐',
+		'🔔 : 🍒 : 🍊',
+        '🍊 : 🍋 : 🔔',		
+		'🍐 : 🍒 : 🍋',
+		'🍐 : 🍐 : 🍐',
+		'🍊 : 🍒 : 🍒',
+		'🔔 : 🔔 : 🍇',
+		'🍌 : 🍒 : 🔔',
+		'🍐 : 🔔 : 🔔',
+		'🍊 : 🍋 : 🍒',
+		'🍋 : 🍋 : 🍌',
+		'🔔 : 🔔 : 🍇',
+		'🔔 : 🍐 : 🍇',
+		'🔔 : 🔔 : 🔔',
+		'🍒 : 🍒 : 🍒',
+		'🍌 : 🍌 : 🍌'
+		]
 let { 
     limitCount,
     memberLimit, 
@@ -4853,6 +4874,11 @@ case '#calender': //BY OGGYBOT
                     await xbot.reply(from, `Wrong Format!\n[❗] `, id)
                 }
             break
+case '#slot':
+          const somtoy = sotoy[Math.floor(Math.random() * (sotoy.length))]	
+		  xbot.sendText(from, `[  🎰 | *SLOTS* ]\n-----------------\n🍋 : 🍌 : 🍍\n${somtoy}*<=====*\n🍋 : 🍌 : 🍍\n[  🎰 | *SLOTS* ]\n\nKeterangan : *Jika anda Menemukan 3 buah pisang, berarti anda adalah pemenang permainan slot ini.*\n\nContoh : 🍌 : 🍌 : 🍌<=====`, id)
+		  break
+        case prefix+'menu':
         // LIST MENU
         case '#menu':
         case '#help':
