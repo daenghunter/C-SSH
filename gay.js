@@ -4842,6 +4842,22 @@ case '#sketch': //BY OGGYBOT
                 await xbot.reply(from, 'Wrong Format!', id)
                 }
                 break
+case '#apigif': //BY OGGYBOT
+
+                if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
+                if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
+                xbot.reply(from, '[WAIT] Sedang di proses⏳ silahkan tunggu ± 1 min!', id)
+                if (isMedia && type === 'image') {
+                const mediaData = await decryptMedia(message, uaOverride)
+                const getUrla = await uploadImages(mediaData, false)
+				const sapi = await axios.get(`http://api.zeks.xyz/api/sfire?img=${getUrla}&apikey=vinzapi`)
+				const pisa = sapi.data
+                await limitAdd(serial)
+				xbot.sendMp4AsSticker(from, pisa.result, 'sapi.jpg', '', id)
+                } else {
+                await xbot.reply(from, 'Wrong Format!', id)
+                }
+                break
 case '#calender': //BY OGGYBOT
 case '#kalender':
                 if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
@@ -4899,16 +4915,7 @@ case '#slot':
         // LIST MENU
         case '#menu':
         case '#help':
-            xbot.sendFileFromUrl(from, 'https://i.ibb.co/6XhWHgN/xbot.jpg', 'xbot.jpg', `
-╭─────「 *USER PROFILE* 」───
-│🔸 ${wkwk}Name User :${wkwk} *${pushname}*
-│🔸 ${wkwk}Limit :${wkwk} *${limitCounts}*/User🦅
-│🔸 ${wkwk}Time Bot :${wkwk} *${time}*
-│🔸 ${wkwk}Uptime Bot :${wkwk} *${format(uptime)}*
-╰────────────────────────
-
-
-╭─────「 *INFO BOT* 」──────
+            xbot.sendFileFromUrl(from, 'https://i.ibb.co/6XhWHgN/xbot.jpg', 'xbot.jpg', `╭─────「 *INFO BOT* 」──────
 │🔸 ${wkwk}Bot Name :${wkwk} *XBOT OFFICIAL*
 │🔸 ${wkwk}Author :${wkwk} *BangAliff*🦅
 │🔸 ${wkwk}Status Bot :${wkwk} *Activated*
