@@ -4912,6 +4912,23 @@ case '#slot':
 	     	    xbot.reply(from, `[  🎰 | *SLOTS* ]\n-----------------\n${somtoy}\n${somtoyy} <=====\n${somtoyyy}\n-----------------\n[  🎰 | *SLOTS* ]\n\n`, id)
 	     	    }
 	        break
+	case '#qouteit':
+	if (isBanned) return await xbot.reply(dari, `Maaf ${pushname}, Nomor kamu telah dibanned!`, id)
+
+   if (args.length === 1) return xbot.reply(dari, 'authornya mana??', id)
+   xbot.reply(dari, mess.wait, id)
+   arg = body.trim().split(' ')
+	const tqt = body.slice(9)
+	const qtny = `https://terhambar.com/aw/qts/proses.php?kata=${tqt}&author=${pushname}&tipe=random&font=./font/font4.otf&size=40`
+	xbot.sendFileFromUrl(dari, qtny, 'quotes.jpg', 'Neh..', id)
+	break
+		case '#cersex':
+	if (isBanned) return await xbot.reply(dari, `Maaf ${pushname}, Nomor kamu telah dibanned!`, id)
+			    const cersexnya = await fetch(`https://api.vhtear.com/cerita_sex&apikey=${vhtearkey}`)
+				const sersex = await cersexnya.json()
+				xbot.sendFileFromUrl(from, sersex.result.data.image, 'bokep.jpg', `${sersex.data.result.cerita}`, id)
+		      	break
+
         // LIST MENU
         case '#menu':
         case '#help':
