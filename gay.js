@@ -1650,7 +1650,8 @@ case '#nobg':
                 }
             }
             break
-       case '#play':          
+       case '#play':  
+        if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
 	   //if (!isOwner) return xbot.reply(from,'FITUR DI MATIKAN SEMENTARA',id)
             if (args.length == 1) return xbot.reply(from, `Untuk mencari lagu from youtube\n\nPenggunaan: #play judul lagu`, id)
             try {
@@ -2236,28 +2237,39 @@ Menunggu video...`
                 xbot.sendText(ownerNumber, 'Tebak Gambar Error : ' + err)
            }
            break
-    case '#ig': 
-        case '#instagram':
-            if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            if (args.length === 1) return xbot.reply(from, `Kirim perintah *#ig [ Link Instagram ]* untuk contoh silahkan kirim perintah *#readme*`)
-            if (!args[1].match(isUrl) && !args[1].includes('instagram.com')) return xbot.reply(from, `Maaf, link yang kamu kirim tidak valid. [Invalid Link]`, id)
-            await xbot.reply(from, mess.wait, id);
-            instagram(args[1]).then(async(res) => {
-                let username = res.owner_username;
-                for (let i = 0; i < res.post.length; i++) {
-                if (res.post[i].type == "image") {
-                        await xbot.sendFileFromUrl(from, res.post[i].urlDownload, "ig.jpg", `*「 INSTAGRAM 」*\n\n➸ *Username* : ${username}\n➸ *Tipe* : Image/Jpg`, id);
-                        limitAdd(serial)
-                    } else if (res.post[i].type == "video") {
-                        await xbot.sendFileFromUrl(from, res.post[i].urlDownload, "ig.mp4", `*「 INSTAGRAM 」*\n\n➸ *Username* : ${username}\n➸ *Tipe* : Video/MP4`);
-                        limitAdd(serial)
-                    }
-                }
-            }).catch((err) => {
-                console.log(err);
-                xbot.reply(from, `Maaf, Terjadi Kesalahan`, id)
-            })
-            break       
+                      case '#ig':
+                        case '#instagram':
+                           if (args.length == 0) return xbot.reply(from, `Kirim perintah *${prefix}ig [linkIg]*`, id)
+                            const igUrl = body.split(' ')[1]
+                            if (!igUrl.startsWith('https://www.instagram.com')) return xbot.reply(from, 'Maaf, ini bukan link instagram!')
+                            xbot.reply(from, mess.wait, id)
+                             {
+                                request.get({
+                                    url: `http://keepsaveit.com/api?api_key=${keepSave}&url=${igUrl}`,
+                                    json: true,
+                                    headers: {
+                                        'User-Agent': 'request'
+                                    }
+                                }, (err, res, data) => {
+                                    if (err) {
+                                        console.log('Error : ', err);
+                                    } else if (res.statusCode !== 200) {
+                                        console.log('Status:', res.statusCode);
+                                        xbot.reply(from, data.msg, id)
+                                    } else {
+                                        const { title, links } = data.response
+                                        const { ext, url, size, resolution } = links
+                                        const regexIg = /\\\//gi;
+                                        const thisUrlIg = url.replace(regexIg, '/')
+                                        if (ext === 'mp4') {
+                                            xbot.sendFileFromUrl(from, thisUrlIg, 'KZ0-IGDL.mp4', `*From :* ${title.split(' on')[0]}\n*Size :* ${size}\n*Resolusi :* ${resolution}`, id)
+                                        } else {
+                                            xbot.sendFileFromUrl(from, thisUrlIg, 'KZ0-IGDL.mp3', `*From:* ${title.split(' on')[0]}\n*Size:* ${size}`, id)
+                                        }
+                                    }
+                            })
+                        }
+                                break  
         case '#starmaker':
             if (!isGroupMsg) return xbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
             if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
@@ -2345,7 +2357,7 @@ Menunggu video...`
             if (isLimit(serial)) return xbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
             
             await limitAdd(serial)
-            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#play [optional]*\nContoh : *#joox Alan Walker*', id)
+            if (args.length === 1) return xbot.reply(from, 'Kirim perintah *#joox [optional]*\nContoh : *#joox Alan Walker*', id)
             xbot.reply(from, mess.wait, id)
             arg = body.trim().split(' ')
             console.log(...arg[1])
@@ -4912,23 +4924,159 @@ case '#slot':
 	     	    xbot.reply(from, `[  🎰 | *SLOTS* ]\n-----------------\n${somtoy}\n${somtoyy} <=====\n${somtoyyy}\n-----------------\n[  🎰 | *SLOTS* ]\n\n`, id)
 	     	    }
 	        break
-	case '#qouteit':
-	if (isBanned) return await xbot.reply(dari, `Maaf ${pushname}, Nomor kamu telah dibanned!`, id)
-
-   if (args.length === 1) return xbot.reply(dari, 'authornya mana??', id)
-   xbot.reply(dari, mess.wait, id)
-   arg = body.trim().split(' ')
-	const tqt = body.slice(9)
-	const qtny = `https://terhambar.com/aw/qts/proses.php?kata=${tqt}&author=${pushname}&tipe=random&font=./font/font4.otf&size=40`
-	xbot.sendFileFromUrl(dari, qtny, 'quotes.jpg', 'Neh..', id)
-	break
-		case '#cersex':
-	if (isBanned) return await xbot.reply(dari, `Maaf ${pushname}, Nomor kamu telah dibanned!`, id)
-			    const cersexnya = await fetch(`https://api.vhtear.com/cerita_sex&apikey=${vhtearkey}`)
-				const sersex = await cersexnya.json()
-				xbot.sendFileFromUrl(from, sersex.result.data.image, 'bokep.jpg', `${sersex.data.result.cerita}`, id)
-		      	break
-
+            case '#play2'://silahkan kalian custom sendiri jika ada yang ingin diubah
+           if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa digunakan didalam Grup!' , id)
+            if (args.length == 0) return xbot.reply(from, `Untuk mencari lagu dari youtube\n\nPenggunaan: ${prefix}play judul lagu`, id)
+            axios.get(`https://api.arugaz.my.id/api/media/ytsearch?query=${body.slice(6)}`)
+            .then(async (res) => {
+                await xbot.sendFileFromUrl(from, `${res.data.result[0].thumbnail}`, ``, `「 *PLAY VIDEO* 」\n\nJudul: ${res.data.result[0].title}\nDurasi: ${res.data.result[0].duration}detik\nUploaded: ${res.data.result[0].uploadDate}\nView: ${res.data.result[0].viewCount}\nChannel: ${res.data.result[0].channel.name}\n\n*_Wait, Sedang Mengirimkan Audio_*`, id)
+				rugaapi.ytmp4(`https://youtu.be/${res.data.result[0].id}`)
+				.then(async(res) => {
+					await xbot.sendFileFromUrl(from, `${res.getVideo}`, '', '', id)
+					.catch(() => {
+						xbot.reply(from, `Error ngab...`, id)
+					})
+				})
+            })
+            break
+case '/neko':
+                try {
+                    xbot.reply(from, mess.wait, id)
+                    axios.get('https://akaneko-api.herokuapp.com/api/neko').then(res => {
+                        xbot.sendFileFromUrl(from, res.data.url, 'neko.jpeg', 'Neko *Nyaa*~');
+                    });
+                } catch (err) {
+                    console.log(err);
+                    throw(err);
+                };
+                break
+                case '/boobs':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/boobs').then(res => {
+                	xbot.sendFileFromUrl(from, res.data.url, 'bakaaa hentaii>~<');
+                });
+                break
+                case '/gifhentai':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/Random_hentai_gif').then(res => {
+                	xbot.sendFileFromUrl(from, res.data.result, '.gif');
+                });
+                break
+                case '/bjanime':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id)
+                const sblow = await axios.get('https://tobz-api.herokuapp.com/api/nsfwblowjob?&apikey=BotWeA')
+                const rblow = sblow.data
+                xbot.sendFileFromUrl(from, rblow.result, `RandoBlow.gif`, 'Random Blowjob!', id)
+                    break
+                case '/pussy':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/pussy_jpg').then(res => {
+                	xbot.sendFileFromUrl(from, res.data.url);
+                });
+                break
+               case '/rhentai':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+               xbot.reply(from, mess.wait, id);
+               axios.get('https://nekos.life/api/v2/img/hentai').then(res => {
+               	xbot.sendFileFromUrl(from, res.data.url);
+               });
+               break
+               case '/kissgif':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+               xbot.reply(from, mess.wait, id);
+               axios.get('https://tobz-api.herokuapp.com/api/kiss?apikey=BotWeA').then(res => {
+               	xbot.sendFileFromUrl(from, res.data.result, `kiss.gif`, '', id)
+               });
+               break
+                case '/cumgif':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/cum').then(res => {
+                	xbot.sendFileFromUrl(from, res.data.url)
+                });
+                break
+                case '/bjgif':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/bj').then(res => {
+                	xbot.sendFileFromUrl(from, res.data.url);
+                });
+                break
+                case '/nsfwgif':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/nsfw_neko_gif').then(res => {
+                	xbot.sendFileFromUrl(from, res.data.url);
+                });
+                break
+                case '/waifu':
+                if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa digunakan didalam Grup!', id)
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/waifu').then(res => {
+                    xbot.sendFileFromUrl(from, res.data.url, 'Waifu UwU');
+                });
+                break
+                case '/slap':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/slap').then(res => {
+                	xbot.sendFileFromUrl(from, res.data.url);
+                });
+                break
+                case '/rhug':
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/hug').then(res => {
+                	xbot.sendFileFromUrl(from, res.data.url);
+                });
+                break
+                case '/animeavatar':
+                    if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa digunakan didalam Grup!' , id)
+                    xbot.reply(from, mess.wait, id);
+                    axios.get('https://nekos.life/api/v2/img/avatar').then(res => {
+                        xbot.sendFileFromUrl(from, res.data.url, 'Avatar UwU');
+                    });
+                    break
+            case '/nekonsfw':
+                if (!isGroupMsg) return xbot.reply(from, 'Fitur ini hanya bisa digunakan didalam Grup!', id)
+                if (!isPremium) return xbot.reply(from, 'Command Premium\nChat owner buat mendaftar', id)
+                    xbot.sendText(from, mess.wait);
+                    axios.get('https://tobz-api.herokuapp.com/api/nsfwneko').then(res => {
+                        xbot.sendFileFromUrl(from, res.data.url, 'Sange kok sama 2D');
+            })
+                break
+            case '/wallpaper2':
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://akaneko-api.herokuapp.com/api/wallpapers').then(res => {
+                    xbot.sendFileFromUrl(from, res.data.url, 'Desktop Wallpaper.jpeg', 'Enjoy :>', id);
+                });
+                break
+            case '/baka':
+                xbot.reply(from, mess.wait, id);
+                axios.get('https://nekos.life/api/v2/img/baka').then(res => {
+                    xbot.sendFileFromUrl(from, res.data.url, 'baka')
+                })
+                break
+                case '/aesthetic':
+                    const estutak = await fetchJson(`https://api.fdci.se/rep.php?gambar=aesthetic`, {method: 'get'})
+                    const n = JSON.parse(JSON.stringify(estutak));
+                    const anjayani = n[Math.floor(Math.random() * n.length)];
+                    await xbot.sendImage(from, anjayani, 'img.jpg', 'nehh wallpaper', id)
+                    break
+           case '#tomp3':
+                if (isMedia || isQuotedVideo){
+                    if (mimetype === 'video/mp4') {
+                        var medata = await decryptMedia(message, uaOverride)
+                        xbot.reply(from, mess.wait, id)
+                        xbot.sendPtt(from, medata, id)
+                    }
+                }
+                break
         // LIST MENU
         case '#menu':
         case '#help':
