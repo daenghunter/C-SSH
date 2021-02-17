@@ -1,20 +1,18 @@
-case '#kisahnabi': //dandi
-             if (!isGroupMsg) return maxbot.reply(from, 'Perintah ini hanya bisa di gunakan dalam group!', id)
-            if (isLimit(serial)) return maxbot.reply(from, `Maaf ${pushname}, Kuota Limit Kamu Sudah Habis, Ketik #limit Untuk Mengecek Kuota Limit Kamu`, id)
-            
-            await limitAdd(serial)
-            if (args.length === 1) return maxbot.reply(from, 'Kirim perintah *#kisahnabi [optional]*\nContoh : *#kisahnabi Adam*', id)
-				const nabii = await axios.get(`https://kisahnabi-api-zhirrr.vercel.app/api/searchnabi?q=${q}`)
-				const nabi = nabii.data.nabi
-				const knabi = `Requested Kisah Nabi
-
-Note : Ini Adalah Kisah yang dibuat secara rangkum saja
-
-• *Nama* : ${nabi.nama}
-• *Lahir* : ${nabi.lahir}
-• *Umur* : ${nabi.umur}
-• *Tempat* : ${nabi.tempat}
-
-• *Kisah* : ${nabi.kisah}`
-				await maxbot.reply(from, knabi, id)
-			break
+case '/stwm':
+case '#stwm':
+case 'p':
+            const weemnyaboss = body.slice(11)
+            const packname = weemnyaboss.split('|')[0]
+            const author = weemnyaboss.split('|')[1]
+            if (isMedia && type === 'image') {
+                const mediaData = await decryptMedia(message, uaOverride)
+                const imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
+                await maxbot.sendImageAsSticker(from, imageBase64, { author: `${author}`, pack: `${packname}` })
+            } else if (quotedMsg && quotedMsg.type == 'image') {
+                const mediaData = await decryptMedia(quotedMsg, uaOverride)
+                const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
+                await maxbot.sendImageAsSticker(from, imageBase64, { author: `${author}`, pack: `${packname}` })
+            } else {
+                    maxbot.reply(from, mess.error.St, id)
+            }
+            break
