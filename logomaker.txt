@@ -1,0 +1,85 @@
+ case '#textamerika':
+	case '#teksamerika':
+	   if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const amrknya = `https://maxbotz.my.id/api/textpro/captamerica?text=${body.slice(10)}`
+		maxbot.sendFileFromUrl(from, amrknya, 'amrk.jpg', 'Nih...', id)
+		break
+case '#textfoil':
+	case '#teksfoil':
+	   if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const foilnya = `https://maxbotz.my.id/api/textpro/foilballoon?text=${body.slice(9)}`
+		maxbot.sendFileFromUrl(from, foilnya, 'foil.jpg', 'Nih...', id)
+		break
+case '#textsummer':
+	case '#tekssummer':
+	   if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const summernya = `https://maxbotz.my.id/api/textpro/sandsummer?text=${body.slice(11)}`
+		maxbot.sendFileFromUrl(from, summernya, 'summer.jpg', 'Nih...', id)
+		break
+case '#textwhite':
+	case '#tekswhite':
+	   if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const whitenya = `https://maxbotz.my.id/api/textpro/sandwrite?text=${body.slice(10)}`
+		maxbot.sendFileFromUrl(from, whitenya, 'white.jpg', 'Nih...', id)
+		break
+case '#textmetal':
+	case '#teksmetal':
+	   if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const metalnya = `https://api.vhtear.com/metal_maker?text=${body.slice(11)}&apikey=${vhtearkey}`
+		maxbot.sendFileFromUrl(from, metalnya, 'metal.jpg', 'Nih...', id)
+		break 
+case '#textwater':
+	case '#tekswater':
+	   if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const waternya = `https://api.vhtear.com/water_maker?text=${body.slice(11)}&apikey=${vhtearkey}`
+		maxbot.sendFileFromUrl(from, waternya, 'water.jpg', 'Nih...', id)
+		break
+case '#galaxytext':
+	case '#galaxytext':
+	   if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const galaxynya = `https://api.vhtear.com/galaxytext?text=${body.slice(11)}&apikey=${vhtearkey}`
+		maxbot.sendFileFromUrl(from, galaxynya, 'galaxy.jpg', 'Nih...', id)
+		break
+	case '#textwroom':
+	case '#tekswroom':
+	    if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const wroomnya = `https://api.xteam.xyz/textpro/robotr2d2?text=${body.slice(11)}&APIKEY=test`
+		maxbot.sendFileFromUrl(from, wroomnya, 'wroom.jpg', 'Nih...', id)
+		break
+	case '#text3d2':
+	case '#teks3d2':
+	    if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const t3d2nya = `https://maxbotz.my.id/api/flamingtext/text3d?text=${body.slice(9)}`
+		maxbot.sendFileFromUrl(from, t3d2nya, '3d.jpg', 'Nih...', id)
+		break
+	
+	case '#textbird':
+	case '#teksbird':
+	    if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const birdnya = `https://maxbotz.my.id/api/flamingtext/blackbird?text=${body.slice(10)}`
+		maxbot.sendFileFromUrl(from, birdnya, '3d.jpg', 'Nih...', id)
+		break
+	
+	case '#textmemo':
+	case '#teksmemo':
+	     if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		const memonya = `https://maxbotz.my.id/api/flamingtext/memories?text=${body.slice(10)}`
+		maxbot.sendFileFromUrl(from, memonya, 'memo.jpg', 'Nih...', id)
+		break
+
+case '#stickfire':
+	    if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		 maxbot.reply(from, mess.wait, id)
+		 const textfires = body.slice(11)
+		 const fires = await fetch(`https://api-zeks.harispoppy.com/api/tfire?text=${body.slice(11)}&apikey=apivinz`)
+		 const firenyas = await fires.json()
+		 maxbot.sendStickerfromUrl(from, firenyas.result)
+break
+case '#gneontext':
+	    if (args.length === 0) return maxbot.reply(from, 'Teks nya mana??', id)
+		 maxbot.reply(from, mess.wait, id)
+		 const textneont = body.slice(11)
+		 const neont = await fetch(`https://api.zeks.xyz/api/gneon?apikey=apivinz&text=${body.slice(11)}`)
+		 const neontnyas = await neont.json()
+		 maxbot.sendFileFromUrl(from, neontnyas.result)
+		 break
