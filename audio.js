@@ -1,14 +1,16 @@
-case '/ytmp3':
-                maxbot.reply(from, wait su, id)
-    axios.get(https://st4rz.herokuapp.com/api/yta2?url=${body.slice(7)})
-                .then(async(res) => {
-        await maxbot.sendFileFromUrl(from, res.data.thumb, '', 「 *YOUTUBE MP3* 」\n\nJudul: ${res.data.title}\nExecute: ${res.data.ext}\n\n*_Sabar, Audio Sedang Dikirim_*, id)
-        await maxbot.sendFileFromUrl(from, res.data.result, '', '', id)
-                          .catch((err) => {
-        maxbot.reply(from, URL ${linkmp3} Sudah pernah didownload sebelumnya, Link akan direset selama 30 menit,id)
-       })
-      })
-      .catch(err => {
-        maxbot.reply(from, 'error', id)
-      })
-          break
+case '/song':
+case '/lagu':
+const riq = body.slice(6)
+if (!riq) return maxbot.reply(from, 'Masukin Judulnya Cuk', message.id)
+const vh = await get(`https://api.vhtear.com/ytmp3?query=${riq}&apikey=${vhtearkey}`).json()
+const cavh = `*Now Playing 🎶*
+
+*» [ ${vh.result.title} ] «*
+
+     *0:00 ─〇───── ${vh.result.duration}*
+              *⇄ ◃◃ ⅠⅠ ▹▹ ↻*
+
+*_Song Requested by @${sender.id.replace('@c.us','')}_*`
+maxbot.sendTextWithMentions(from, cavh)
+maxbot.sendPtt(from, vh.result.mp3, 'u.mp3', '')
+break
